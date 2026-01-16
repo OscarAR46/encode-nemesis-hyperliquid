@@ -88,6 +88,7 @@ const DIALOGUE = {
 const state = {
   scene: 'title' as Scene,
   introIndex: 0,
+  introStarted: false,
   introComplete: false,
   connected: false,
   address: '',
@@ -291,6 +292,11 @@ function showRandomDialogue(category: keyof typeof DIALOGUE) {
 
 function advanceIntro() {
   if (state.isTyping) { skipTypewriter(); return }
+  if (!state.introStarted) {
+    state.introStarted = true
+    showDialogue(INTRO_DIALOGUE[0])
+    return
+  }
   state.introIndex++
   if (state.introIndex >= INTRO_DIALOGUE.length) {
     state.introComplete = true
@@ -350,7 +356,10 @@ function renderTitleScreen(app: HTMLElement) {
   `
   document.getElementById('dialogue-box')?.addEventListener('click', handleDialogueClick)
   document.querySelector('.title-screen')?.addEventListener('click', () => {
-    if (state.introIndex === 0 && !state.isTyping) showDialogue(INTRO_DIALOGUE[0])
+    if (!state.introStarted && !state.isTyping) {
+      state.introStarted = true
+      showDialogue(INTRO_DIALOGUE[0])
+    }
   })
 }
 
