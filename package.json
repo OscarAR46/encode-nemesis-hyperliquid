@@ -1,0 +1,9 @@
+{
+  "name": "nemesis",
+  "dependencies": {
+    "morphdom": "^2.7.7"
+  },
+  "devDependencies": {
+    "@types/morphdom": "^2.4.2"
+  }
+}
