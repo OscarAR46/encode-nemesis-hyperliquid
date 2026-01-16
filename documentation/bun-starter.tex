@@ -1,0 +1,266 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tabularx}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.98,0.98,0.98}
+\definecolor{commentdark}{rgb}{0.35,0.35,0.35}
+\definecolor{stringgreen}{rgb}{0.25,0.5,0.25}
+
+\lstdefinelanguage{typescript}{
+    keywords={const, let, var, function, return, if, else, for, while, do, switch, case, break, continue, new, this, typeof, instanceof, true, false, null, undefined, async, await, import, export, default, from, class, extends, implements, interface, type, enum, public, private, protected, static, readonly, abstract, as, is, in, of, try, catch, finally, throw},
+    sensitive=true,
+    comment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    morestring=[b]',
+    morestring=[b]`
+}
+
+\lstdefinelanguage{bash}{
+    keywords={if, then, else, elif, fi, for, in, do, done, while, until, case, esac, function, return, exit, local, export, source, cd, echo, cat, ls, rm, cp, mv, mkdir, chmod, chown, grep, sed, awk, find, xargs, pipe, sudo, nix, bun, git},
+    sensitive=true,
+    comment=[l]{\#},
+    morestring=[b]",
+    morestring=[b]'
+}
+
+\lstdefinelanguage{nix}{
+    keywords={let, in, with, rec, inherit, if, then, else, assert, true, false, null, import, fetchurl, fetchgit, stdenv, mkDerivation, buildInputs, nativeBuildInputs, src, name, version, description, inputs, outputs, pkgs, lib, config, options, enable, package, services, environment, systemPackages, devShells, packages, default, system, flake},
+    sensitive=true,
+    comment=[l]{\#},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]",
+    morestring=[b]''
+}
+
+\lstdefinestyle{typescript}{
+    language=typescript,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{commentdark},
+    keywordstyle=\color{codepurple},
+    stringstyle=\color{stringgreen},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    numbers=none,
+    frame=single,
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt,
+    rulecolor=\color{codegray!30}
+}
+
+\lstdefinestyle{bash}{
+    language=bash,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{commentdark},
+    keywordstyle=\color{codepurple},
+    stringstyle=\color{stringgreen},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    numbers=none,
+    frame=single,
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt,
+    rulecolor=\color{codegray!30}
+}
+
+\lstdefinestyle{nix}{
+    language=nix,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{commentdark},
+    keywordstyle=\color{codepurple},
+    stringstyle=\color{stringgreen},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    numbers=none,
+    frame=single,
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt,
+    rulecolor=\color{codegray!30}
+}
+
+\lstdefinestyle{plain}{
+    backgroundcolor=\color{backcolour},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    showstringspaces=false,
+    numbers=none,
+    frame=single,
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt,
+    rulecolor=\color{codegray!30}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    urlcolor=codepurple
+}
+
+\begin{document}
+
+\begin{center}
+{\huge \textbf{bun-starter}}
+
+\vspace{0.25cm}
+
+{\large minimal web development environment}
+\end{center}
+
+A web page boils down to nothing more than a file stored inside a directory on a physical machine. A \textbf{browser} resolves the \textbf{domain name} to an \textbf{IP address} via \texttt{DNS} and connects on a \textbf{port} (\texttt{443} for \texttt{HTTPS}, \texttt{80} for \texttt{HTTP}).
+
+A port is a numbered gateway - software binds to it on the inside to offer a service, while the outside world connects to it to access that service.  \textbf{Think of a Minecraft server}: players connect to a world hosted on a machine, served by one computer or many working as a network.
+
+Software on the website's host machine listens for requests (from an internet browser) and sends or 'serves' the requested files back - hence '\textbf{server}'. Not to be confused with the hardware hosting it, which is sometimes also referred to as a server or \texttt{VPS} (Virtual Private Server).
+
+\texttt{HTTP} governs this exchange at \textbf{OSI} Layer 7 (\texttt{L7} Application). \texttt{HTTPS} layers \texttt{TLS} encryption beneath it at Layers 5-6 (\texttt{L5} Session/\texttt{L6} Presentation), which wraps the \texttt{HTTP} content and hands it down to \texttt{TCP} at Layer 4 (\texttt{L4} Transport).
+
+To simplify, \texttt{HTTPS} is just \texttt{HTTP} (\texttt{L7}) over \texttt{TLS} (\texttt{L5/6}) over \texttt{TCP} (\texttt{L4}).
+
+Request, serve, respond: these are the \texttt{primitives} of this domain - indivisible operations that everything else builds upon.
+
+\section*{Structure}
+
+\subsection*{Template Files}
+
+\begin{lstlisting}[style=plain]
+flake.nix       environment definition
+serve.ts        HTTP server
+index.html      your markup
+style.css       your styles
+.envrc          direnv activation (commented)
+.gitignore      ignored paths
+README.md       this document
+\end{lstlisting}
+
+\subsection*{Generated and Committed}
+
+\begin{lstlisting}[style=plain]
+flake.lock      pinned Nix dependency versions
+package.json    dependency declarations (when you add dependencies)
+bun.lockb       pinned dependency versions (when you add dependencies)
+\end{lstlisting}
+
+\subsection*{Generated and Ignored}
+
+\begin{lstlisting}[style=plain]
+node_modules/   installed dependencies
+.direnv/        direnv cache
+server          compiled binary
+\end{lstlisting}
+
+\section*{Files}
+
+\textbf{flake.nix} declares what the environment provides (currently just Bun). Add databases, native libraries, or other tools here as needed.
+
+\textbf{flake.lock} pins exact versions. Commit it for reproducibility, run \texttt{nix flake update} to get latest versions.
+
+\textbf{serve.ts}:
+
+\begin{lstlisting}[style=typescript]
+// values the server needs
+const port = 3000
+const staticDir = "."
+
+// how the server identifies what it sends
+const contentTypes = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ...
+}
+
+// reads bytes from disc, returns response
+function serveFile(path) { ... }
+
+// returns 404 response
+function notFound() { ... }
+
+// prints request info to terminal
+function log(request, status) { ... }
+
+// brings everything to life
+Bun.serve({ port, fetch })
+\end{lstlisting}
+
+\textbf{index.html} and \textbf{style.css} are placeholders. Replace them.
+
+\textbf{.envrc} enables automatic shell activation via direnv. Uncomment and run \texttt{direnv allow} to use it.
+
+\section*{Workflow}
+
+\begin{lstlisting}[style=bash]
+nix develop           # enter environment
+bun --hot serve.ts    # run dev server at localhost:3000
+
+                      # build production binary
+bun build --compile serve.ts --outfile=server
+\end{lstlisting}
+
+The \texttt{--hot} flag reloads on file changes. The compiled binary is self-contained and runs without Bun installed.
+
+\section*{Concepts}
+
+\subsection*{Request-Response}
+
+The browser sends an HTTP request (\texttt{GET /index.html}), the server reads the file and sends it back with a \texttt{Content-Type} header (\texttt{text/html}, \texttt{text/css}, \texttt{image/png}) so the browser knows how to handle it.
+
+\subsection*{Static vs Dynamic}
+
+Static responses serve files from disc unchanged. Dynamic responses are computed - an API endpoint runs code and returns data that never existed as a file.
+
+Adding a dynamic endpoint:
+
+\begin{lstlisting}[style=typescript]
+if (path === "/api/weather") {
+    return Response.json({ temp: 18, conditions: "overcast" })
+}
+\end{lstlisting}
+
+\subsection*{Proxy}
+
+Your binary listens on port \texttt{3000}. A proxy (nginx, caddy) sits in front, handles HTTPS on port \texttt{443}, and forwards requests to your binary. This separates network concerns from application logic.
+
+\subsection*{Environment Isolation}
+
+\texttt{nix develop} creates an isolated shell with exactly what the flake specifies. Nothing is installed globally. Clone the repo anywhere, run \texttt{nix develop}, get an identical environment.
+
+\subsection*{Lock Files}
+
+\texttt{flake.lock} records exactly which package versions were resolved. Commit it to freeze versions. Delete and regenerate to update.
+
+\section*{Extension}
+
+\textbf{API routes}: add conditions in \texttt{serve.ts} matching paths to responses.
+
+\textbf{Dependencies}: \texttt{bun add <package>}, then commit \texttt{package.json} and \texttt{bun.lockb}.
+
+\textbf{System tools}: add to the packages list in \texttt{flake.nix}.
+
+\textbf{Database}: add to flake for local dev, configure production separately via environment variables.
+
+\textbf{Containers}: Nix can build OCI images containing just your compiled binary.
+
+\end{document}
