@@ -3,6 +3,7 @@ import { render } from './render'
 import { setupDelegatedEvents } from './events'
 import { showRandomDialogue } from './signal'
 import { connectionMonitor } from './connection'
+import { initFromStorage, saveUserData } from './storage'
 import type { ConnectionState, AnomalyPattern } from './connection'
 
 function initConnectionMonitor() {
@@ -69,12 +70,29 @@ function initConnectionMonitor() {
 }
 
 function init() {
+  const isReturning = initFromStorage()
   initData()
   initConnectionMonitor()
   setupDelegatedEvents()
+
+  // Set initial scene based on returning status
+  if (isReturning) {
+    state.scene = 'selection'
+  } else {
+    state.scene = 'title'
+  }
+
   render()
+
+  // Save user data periodically and on page unload
+  window.addEventListener('beforeunload', saveUserData)
+  setInterval(saveUserData, 30000) // Save every 30 seconds
+
   console.log('NEMESIS initialized')
   console.log('Every trader needs a Nemesis.')
+  if (isReturning) {
+    console.log('Welcome back, trader.')
+  }
 }
 
 init()

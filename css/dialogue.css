@@ -195,3 +195,87 @@
   color: var(--text-dim);
   animation: blink 1.5s ease-in-out infinite;
 }
+
+/* Dialogue Control Buttons */
+.dialogue-controls {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dialogue-box.signal-connected .dialogue-controls {
+  opacity: 1;
+}
+
+.dialogue-box:hover .dialogue-controls {
+  opacity: 1;
+}
+
+.dialogue-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(30, 50, 80, 0.8);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.dialogue-ctrl-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dialogue-ctrl-btn:hover {
+  background: rgba(50, 80, 120, 0.9);
+  color: var(--text-bright);
+  border-color: var(--accent-cyan);
+}
+
+.dialogue-ctrl-btn.active {
+  background: rgba(100, 180, 255, 0.2);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
+.dialogue-ctrl-btn.active svg {
+  filter: drop-shadow(0 0 4px rgba(100, 180, 255, 0.5));
+}
+
+/* Hide continue indicator when paused */
+.dialogue-box.paused .dialogue-continue {
+  animation: none;
+  opacity: 0.3;
+}
+
+/* Autoplay progress indicator */
+.dialogue-autoplay-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-cyan), rgba(100, 180, 255, 0.3));
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  width: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dialogue-box.autoplay-active .dialogue-autoplay-bar {
+  opacity: 1;
+  animation: autoplay-progress 4s linear forwards;
+}
+
+@keyframes autoplay-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}

@@ -1,10 +1,11 @@
-export type Scene = 'title' | 'main'
+export type Scene = 'selection' | 'title' | 'main'
 export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
 export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
 export type PosTab = 'positions' | 'orders' | 'history'
 export type AvatarMode = 'full' | 'small' | 'off'
 export type Emotion = 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'inquisitive' | 'talkative' | 'excited' | 'loss'
 export type DialogueSignal = 'off' | 'connecting' | 'connected' | 'disconnecting'
+export type DialoguePlayState = 'playing' | 'paused'
 
 export interface Market {
   id: string
@@ -94,8 +95,14 @@ export interface AppState {
   particlesHtml: string
   dialogueSignal: DialogueSignal
   dialogueAtEnd: boolean
+  dialoguePlayState: DialoguePlayState
+  autoplayEnabled: boolean
   connectionState: ConnectionState
   lastConnectionDialogue: number
+  isReturningPlayer: boolean
+  tutorialComplete: boolean
+  currentTutorialStep: number
+  tabTutorialShown: Record<NavTab, boolean>
 }
 
 export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'
