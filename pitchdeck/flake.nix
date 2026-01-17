@@ -29,8 +29,7 @@
           echo "Serving at http://localhost:8080"
           echo "Press Ctrl+C to stop"
           echo ""
-          cd ${pitch-deck}/share/nemesis-pitch
-          ${pkgs.python3}/bin/python -m http.server 8080
+          ${pkgs.miniserve}/bin/miniserve --index index.html -p 8080 ${pitch-deck}/share/nemesis-pitch
         '';
         
       in {
@@ -48,12 +47,12 @@
         
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            python3
+            miniserve
           ];
           
           shellHook = ''
             echo "NEMESIS Pitch Deck Dev Shell"
-            echo "Run: python -m http.server 8080"
+            echo "Run: miniserve --index index.html -p 8080 ."
           '';
         };
       }

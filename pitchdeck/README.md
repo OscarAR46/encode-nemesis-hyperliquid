@@ -5,12 +5,7 @@ Visual novel-styled technical pitch deck for the Hyperliquid London Community Ha
 ## Usage
 
 ```bash
-# Serve the pitch deck
 nix run
-
-# Or enter dev shell
-nix develop
-python -m http.server 8080
 ```
 
 Then open http://localhost:8080
