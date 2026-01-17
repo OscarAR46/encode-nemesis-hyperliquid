@@ -29,5 +29,8 @@ Thumbs.db
 # Bounty osc docs
 bounties/
 
+#osc docs
+OVERALL-ADDS-AND-GUIDELINES.md
+
 # Mutual PROMPT
 PROMPT/
