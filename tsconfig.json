@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    // Path resolution
+    "baseUrl": ".",
+    "paths": {
+      "@app/*": ["app/*"],
+      "@config/*": ["config/*"]
+    },
+    
+    // Module system
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    
+    // Target environment
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    
+    // Output (Bun handles actual emit, this is for type checking)
+    "noEmit": true,
+    
+    // Type checking strictness
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    // Interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "*.ts",
+    "app/**/*.ts",
+    "config/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -1,12 +1,18 @@
-import type { AppState } from './types'
+import type { AppState } from '@app/types'
 
 export const state: AppState = {
   scene: 'selection',
   introIndex: 0,
   introComplete: false,
   introStarted: false,
+  
   connected: false,
   address: '',
+  chainId: null,
+  isConnecting: false,
+  walletError: null,
+  connectorName: null,
+  
   balance: 1250.00,
   nav: 'trade',
   orderTab: 'yes',
@@ -87,4 +93,27 @@ function createParticles(): string {
     html += `<div class="particle" style="left:${left}%;width:${size}px;height:${size}px;animation-delay:-${delay}s;animation-duration:${duration}s;"></div>`
   }
   return html
+}
+
+export function updateWalletState(walletState: {
+  connected: boolean
+  address: string | null
+  chainId: number | null
+  isConnecting: boolean
+  connector: string | null
+}) {
+  state.connected = walletState.connected
+  state.address = walletState.address ?? ''
+  state.chainId = walletState.chainId as (999 | 998 | null)
+  state.isConnecting = walletState.isConnecting
+  state.connectorName = walletState.connector
+  
+  if (walletState.connected) {
+    state.walletError = null
+  }
+}
+
+// Expose state to dev console for debugging (must be AFTER state is declared!)
+if (typeof window !== 'undefined') {
+  (window as any).__nemesisState = state
 }

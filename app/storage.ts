@@ -1,5 +1,5 @@
-import { state } from './state'
-import type { NavTab, AvatarMode } from './types'
+import { state } from '@app/state'
+import type { NavTab, AvatarMode } from '@app/types'
 
 const STORAGE_KEY = 'nemesis_user_data'
 const STORAGE_VERSION = 1
@@ -38,7 +38,6 @@ export function loadUserData(): StoredData {
 
     const data = JSON.parse(raw) as StoredData
 
-    // Version migration if needed
     if (data.version !== STORAGE_VERSION) {
       return getDefaultData()
     }

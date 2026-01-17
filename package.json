@@ -1,7 +1,10 @@
 {
   "name": "nemesis",
   "dependencies": {
-    "morphdom": "^2.7.7"
+    "morphdom": "^2.7.7",
+    "viem": "^2.21.0",
+    "@wagmi/core": "^2.14.0",
+    "@wagmi/connectors": "^5.3.0"
   },
   "devDependencies": {
     "@types/morphdom": "^2.4.2"

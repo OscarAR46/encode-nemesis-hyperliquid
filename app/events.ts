@@ -1,7 +1,7 @@
-import { state } from './state'
-import { render } from './render'
-import { playSound } from './audio'
-import { toast, getMarket, formatUSD } from './utils'
+import { state } from '@app/state'
+import { render } from '@app/render'
+import { playSound } from '@app/audio'
+import { toast, getMarket, formatUSD } from '@app/utils'
 import {
   connectSignal,
   disconnectSignal,
@@ -13,10 +13,16 @@ import {
   togglePausePlay,
   skipDialogue,
   toggleAutoplay
-} from './signal'
-import { INTRO_DIALOGUE, RETURNING_INTRO_DIALOGUE } from './dialogue'
-import { saveUserData, clearUserData } from './storage'
-import type { NavTab, OrderTab, PosTab, AvatarMode } from './types'
+} from '@app/signal'
+import { INTRO_DIALOGUE, RETURNING_INTRO_DIALOGUE, DIALOGUE } from '@app/dialogue'
+import { saveUserData, clearUserData } from '@app/storage'
+import {
+  connectWallet,
+  disconnectWallet,
+  WalletError,
+  getErrorMessage,
+} from '@app/wallet'
+import type { NavTab, OrderTab, PosTab, AvatarMode } from '@app/types'
 
 let swRegistered = false
 
@@ -53,10 +59,8 @@ function advanceIntro() {
     state.introComplete = true
     state.scene = 'main'
     playSound([523, 659, 784])
-    // Save immediately so returning player detection works on refresh
     saveUserData()
     render()
-    // Show trade tab tutorial for new players, idle for returning
     if (!state.tutorialComplete && !state.tabTutorialShown.trade) {
       state.tabTutorialShown.trade = true
       saveUserData()
@@ -102,7 +106,6 @@ function handleDialogueClick() {
   if (state.isTyping) {
     skipTypewriter()
   } else {
-    // Always show generic idle dialogue when clicking through
     showRandomDialogue('idle')
   }
   playSound([500])
@@ -132,6 +135,72 @@ function handlePortraitClick() {
     showRandomDialogue('idle')
   }
   playSound([500])
+}
+
+async function handleWalletClick() {
+  if (state.isConnecting) return
+  
+  if (!state.connected) {
+    state.isConnecting = true
+    state.walletError = null
+    render()
+    
+    try {
+      const result = await connectWallet()
+      
+      state.connected = true
+      state.address = result.address
+      state.chainId = result.chainId as (999 | 998)
+      state.isConnecting = false
+      state.connectorName = result.connector
+      state.walletError = null
+      
+      playSound([523, 659, 784])
+      toast('Wallet connected!', 'success')
+      render()
+      
+      setTimeout(() => showRandomDialogue('walletConnected'), 100)
+      
+    } catch (error) {
+      state.isConnecting = false
+      
+      if (error instanceof WalletError) {
+        state.walletError = error.type
+        
+        if (error.type !== 'USER_REJECTED') {
+          toast(getErrorMessage(error), 'error')
+        }
+      } else {
+        state.walletError = 'UNKNOWN'
+        toast('Connection failed. Please try again.', 'error')
+      }
+      
+      render()
+    }
+  } else {
+    try {
+      await disconnectWallet()
+      
+      state.connected = false
+      state.address = ''
+      state.chainId = null
+      state.connectorName = null
+      state.walletError = null
+      
+      playSound([400, 300])
+      toast('Wallet disconnected')
+      render()
+      
+      setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
+      
+    } catch (error) {
+      console.error('[Wallet] Disconnect failed:', error)
+      state.connected = false
+      state.address = ''
+      state.chainId = null
+      render()
+    }
+  }
 }
 
 async function handlePlaceOrder() {
@@ -189,17 +258,14 @@ export function setupDelegatedEvents() {
   app.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
 
-    // Selection screen handlers
     if (state.scene === 'selection') {
       if (target.closest('#btn-continue')) {
-        // Continue with saved data - go to title as returning player
         state.scene = 'title'
         playSound([523, 659, 784])
         render()
         return
       }
       if (target.closest('#btn-new-game')) {
-        // Clear saved data and start fresh
         clearUserData()
         state.isReturningPlayer = false
         state.tutorialComplete = false
@@ -230,18 +296,15 @@ export function setupDelegatedEvents() {
         playSound([600])
         render()
 
-        // Determine which dialogue to show
         const tabName = nav.charAt(0).toUpperCase() + nav.slice(1)
 
         if (!state.tutorialComplete && !state.tabTutorialShown[nav]) {
-          // First time on this tab - show tutorial
           state.tabTutorialShown[nav] = true
           saveUserData()
-          const tutorialKey = `tutorial${tabName}` as keyof typeof import('./dialogue').DIALOGUE
+          const tutorialKey = `tutorial${tabName}` as keyof typeof DIALOGUE
           setTimeout(() => showRandomDialogue(tutorialKey), 300)
         } else {
-          // Already visited - show idle dialogue for this tab
-          const idleKey = `idle${tabName}` as keyof typeof import('./dialogue').DIALOGUE
+          const idleKey = `idle${tabName}` as keyof typeof DIALOGUE
           setTimeout(() => showRandomDialogue(idleKey), 300)
         }
       }
@@ -272,14 +335,7 @@ export function setupDelegatedEvents() {
     }
 
     if (target.closest('#wallet-btn')) {
-      if (!state.connected) {
-        state.connected = true
-        state.address = '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12'
-        playSound([523, 659, 784])
-        toast('Wallet connected!', 'success')
-        render()
-        setTimeout(() => showRandomDialogue('walletConnected'), 0)
-      }
+      handleWalletClick()
       return
     }
 
@@ -301,7 +357,6 @@ export function setupDelegatedEvents() {
       return
     }
 
-    // Dialogue control buttons (work in both title and main scenes)
     if (target.closest('#dialogue-pause-play')) {
       e.stopPropagation()
       togglePausePlay()
@@ -415,7 +470,6 @@ export function setupDelegatedEvents() {
         state.showMarketModal = false
         playSound([500])
         render()
-        // Show dialogue when changing market
         setTimeout(() => showRandomDialogue('marketChange'), 200)
       } else {
         state.showMarketModal = false

@@ -1,10 +1,11 @@
-import { state, initData } from './state'
-import { render } from './render'
-import { setupDelegatedEvents } from './events'
-import { showRandomDialogue } from './signal'
-import { connectionMonitor } from './connection'
-import { initFromStorage, saveUserData } from './storage'
-import type { ConnectionState, AnomalyPattern } from './connection'
+import { state, initData, updateWalletState } from '@app/state'
+import { render } from '@app/render'
+import { setupDelegatedEvents } from '@app/events'
+import { showRandomDialogue } from '@app/signal'
+import { connectionMonitor } from '@app/connection'
+import { initFromStorage, saveUserData } from '@app/storage'
+import { initWallet, onAccountChange } from '@app/wallet'
+import type { ConnectionState, AnomalyPattern } from '@app/connection'
 
 function initConnectionMonitor() {
   connectionMonitor.init()
@@ -69,13 +70,35 @@ function initConnectionMonitor() {
   })
 }
 
-function init() {
+async function initWalletConnection() {
+  try {
+    const walletState = await initWallet()
+    
+    if (walletState.connected) {
+      updateWalletState(walletState)
+      console.log('[Wallet] Restored session:', walletState.address?.slice(0, 10) + '...')
+    }
+    
+    onAccountChange((newState) => {
+      updateWalletState(newState)
+      render()
+      
+      if (!newState.connected && state.connected) {
+        setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
+      }
+    })
+    
+  } catch (error) {
+    console.error('[Wallet] Init failed:', error)
+  }
+}
+
+async function init() {
   const isReturning = initFromStorage()
   initData()
   initConnectionMonitor()
   setupDelegatedEvents()
 
-  // Set initial scene based on returning status
   if (isReturning) {
     state.scene = 'selection'
   } else {
@@ -84,9 +107,10 @@ function init() {
 
   render()
 
-  // Save user data periodically and on page unload
+  initWalletConnection()
+
   window.addEventListener('beforeunload', saveUserData)
-  setInterval(saveUserData, 30000) // Save every 30 seconds
+  setInterval(saveUserData, 30000)
 
   console.log('NEMESIS initialized')
   console.log('Every trader needs a Nemesis.')

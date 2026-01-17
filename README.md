@@ -89,6 +89,76 @@ Required variables are documented in `.env.template`. The template is committed;
 
 ---
 
+## Project Structure
+
+```
+.
+├── app/                    # Core application modules
+│   ├── app.ts              # Main app initialization
+│   ├── audio.ts            # Sound effects & music
+│   ├── connection.ts       # WebSocket/RPC connections
+│   ├── dialogue.ts         # Visual novel dialogue system
+│   ├── events.ts           # Event handling
+│   ├── icons.ts            # Icon assets
+│   ├── render.ts           # DOM rendering (morphdom)
+│   ├── signal.ts           # Reactive state signals
+│   ├── state.ts            # Global state management
+│   ├── storage.ts          # Local storage persistence
+│   ├── types.ts            # TypeScript definitions
+│   ├── utils.ts            # Utility functions
+│   └── wallet.ts           # Wallet integration
+├── config/                 # Configuration modules
+│   ├── chains.ts           # Chain definitions
+│   ├── env.ts              # Environment variables
+│   ├── index.ts            # Config exports
+│   └── wagmi.ts            # Wagmi configuration
+├── css/                    # Stylesheets
+│   ├── avatar.css          # Character avatars
+│   ├── backgrounds.css     # Background images
+│   ├── base.css            # Base styles
+│   ├── connection.css      # Connection UI
+│   ├── crt.css             # CRT monitor effect
+│   ├── dialogue.css        # Dialogue boxes
+│   ├── header.css          # Header component
+│   ├── pages.css           # Page layouts
+│   ├── panels.css          # UI panels
+│   ├── responsive.css      # Mobile responsiveness
+│   ├── title.css           # Title screen
+│   └── utils.css           # Utility classes
+├── dist/                   # Build output
+├── documentation/          # Docs & assets
+│   ├── nemesis-whitepaper.pdf
+│   ├── nemesis-whitepaper.tex
+│   ├── pitchdeck/          # Pitch deck slides
+│   └── screenshot.png
+├── fonts/                  # Custom fonts
+│   ├── Cinzel/
+│   └── Quicksand/
+├── nemesis-chan/           # Character expressions
+│   ├── concerned.png
+│   ├── excited.png
+│   ├── happy.png
+│   ├── inquisitive.png
+│   ├── kawaii.png
+│   ├── loss.png
+│   ├── pleased.png
+│   ├── sly.png
+│   └── talkative.png
+├── app.ts                  # Entry point
+├── index.html              # HTML shell
+├── style.css               # Root stylesheet
+├── flake.nix               # Nix flake (build system)
+├── flake.lock              # Nix lock file
+├── package.json            # Dependencies
+├── tsconfig.json           # TypeScript config
+├── serve.dev.ts            # Dev server
+├── serve.prod.ts           # Prod server
+├── serve.shared.ts         # Shared server config
+└── sw.template.js          # Service worker template
+```
+
+---
+
 ## Technology Stack
 
 | Component | Technology |

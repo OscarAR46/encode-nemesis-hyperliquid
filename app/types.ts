@@ -7,6 +7,18 @@ export type Emotion = 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'in
 export type DialogueSignal = 'off' | 'connecting' | 'connected' | 'disconnecting'
 export type DialoguePlayState = 'playing' | 'paused'
 
+// Wallet types
+export type WalletErrorType =
+  | 'USER_REJECTED'
+  | 'CHAIN_NOT_SUPPORTED'
+  | 'CONNECTOR_NOT_FOUND'
+  | 'ALREADY_CONNECTED'
+  | 'NOT_CONNECTED'
+  | 'SWITCH_CHAIN_FAILED'
+  | 'UNKNOWN'
+
+export type SupportedChainId = 999 | 998
+
 export interface Market {
   id: string
   asset: string
@@ -65,8 +77,15 @@ export interface AppState {
   introIndex: number
   introComplete: boolean
   introStarted: boolean
+  
+  // Wallet state
   connected: boolean
   address: string
+  chainId: SupportedChainId | null
+  isConnecting: boolean
+  walletError: WalletErrorType | null
+  connectorName: string | null
+  
   balance: number
   nav: NavTab
   orderTab: OrderTab
