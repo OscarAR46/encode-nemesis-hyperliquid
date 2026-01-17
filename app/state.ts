@@ -5,8 +5,15 @@ export const state: AppState = {
   introIndex: 0,
   introComplete: false,
   introStarted: false,
+  
+  // Wallet state
   connected: false,
   address: '',
+  chainId: null,
+  isConnecting: false,
+  walletError: null,
+  connectorName: null,
+  
   balance: 1250.00,
   nav: 'trade',
   orderTab: 'yes',
@@ -87,4 +94,27 @@ function createParticles(): string {
     html += `<div class="particle" style="left:${left}%;width:${size}px;height:${size}px;animation-delay:-${delay}s;animation-duration:${duration}s;"></div>`
   }
   return html
+}
+
+/**
+ * Update wallet state from wallet manager
+ * Called by wallet change subscription
+ */
+export function updateWalletState(walletState: {
+  connected: boolean
+  address: string | null
+  chainId: number | null
+  isConnecting: boolean
+  connector: string | null
+}) {
+  state.connected = walletState.connected
+  state.address = walletState.address ?? ''
+  state.chainId = walletState.chainId as (999 | 998 | null)
+  state.isConnecting = walletState.isConnecting
+  state.connectorName = walletState.connector
+  
+  // Clear error on successful connection
+  if (walletState.connected) {
+    state.walletError = null
+  }
 }

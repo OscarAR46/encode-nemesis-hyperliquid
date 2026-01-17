@@ -136,7 +136,7 @@ function renderMainInterface(): string {
             <button class="mode-btn ${state.avatarMode === 'small' ? 'active' : ''}" data-mode="small">Small</button>
             <button class="mode-btn ${state.avatarMode === 'off' ? 'active' : ''}" data-mode="off">Off</button>
           </div>
-          <button class="wallet-btn ${state.connected ? 'connected' : ''}" id="wallet-btn">${state.connected ? truncAddr(state.address) : 'Connect Wallet'}</button>
+          ${renderWalletButton()}
         </header>
         <div class="main-content">
           <div class="avatar-area mode-${state.avatarMode}">
@@ -182,6 +182,34 @@ function renderMainInterface(): string {
       </div>
       ${state.showMarketModal ? renderMarketModal() : ''}
     </div>
+  `
+}
+
+/**
+ * Render wallet button with different states
+ */
+function renderWalletButton(): string {
+  if (state.isConnecting) {
+    return `
+      <button class="wallet-btn connecting" id="wallet-btn" disabled>
+        <span class="wallet-spinner"></span>
+        Connecting...
+      </button>
+    `
+  }
+  
+  if (state.connected) {
+    return `
+      <button class="wallet-btn connected" id="wallet-btn">
+        ${truncAddr(state.address)}
+      </button>
+    `
+  }
+  
+  return `
+    <button class="wallet-btn" id="wallet-btn">
+      Connect Wallet
+    </button>
   `
 }
 

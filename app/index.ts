@@ -1,9 +1,10 @@
-import { state, initData } from './state'
+import { state, initData, updateWalletState } from './state'
 import { render } from './render'
 import { setupDelegatedEvents } from './events'
 import { showRandomDialogue } from './signal'
 import { connectionMonitor } from './connection'
 import { initFromStorage, saveUserData } from './storage'
+import { initWallet, onAccountChange } from './wallet'
 import type { ConnectionState, AnomalyPattern } from './connection'
 
 function initConnectionMonitor() {
@@ -69,7 +70,37 @@ function initConnectionMonitor() {
   })
 }
 
-function init() {
+/**
+ * Initialize wallet connection and watch for changes
+ */
+async function initWalletConnection() {
+  try {
+    // Check for existing connection (from localStorage)
+    const walletState = await initWallet()
+    
+    if (walletState.connected) {
+      // Restore wallet state
+      updateWalletState(walletState)
+      console.log('[Wallet] Restored session:', walletState.address?.slice(0, 10) + '...')
+    }
+    
+    // Watch for account changes (user switches wallet, disconnects, etc.)
+    onAccountChange((newState) => {
+      updateWalletState(newState)
+      render()
+      
+      // Show dialogue on disconnect if we were connected
+      if (!newState.connected && state.connected) {
+        setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
+      }
+    })
+    
+  } catch (error) {
+    console.error('[Wallet] Init failed:', error)
+  }
+}
+
+async function init() {
   const isReturning = initFromStorage()
   initData()
   initConnectionMonitor()
@@ -83,6 +114,9 @@ function init() {
   }
 
   render()
+
+  // Initialize wallet (async, won't block render)
+  initWalletConnection()
 
   // Save user data periodically and on page unload
   window.addEventListener('beforeunload', saveUserData)

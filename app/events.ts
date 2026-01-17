@@ -16,6 +16,12 @@ import {
 } from './signal'
 import { INTRO_DIALOGUE, RETURNING_INTRO_DIALOGUE } from './dialogue'
 import { saveUserData, clearUserData } from './storage'
+import {
+  connectWallet,
+  disconnectWallet,
+  WalletError,
+  getErrorMessage,
+} from './wallet'
 import type { NavTab, OrderTab, PosTab, AvatarMode } from './types'
 
 let swRegistered = false
@@ -132,6 +138,83 @@ function handlePortraitClick() {
     showRandomDialogue('idle')
   }
   playSound([500])
+}
+
+/**
+ * Handle wallet connection/disconnection
+ */
+async function handleWalletClick() {
+  // Prevent double-click while connecting
+  if (state.isConnecting) return
+  
+  if (!state.connected) {
+    // Connect wallet
+    state.isConnecting = true
+    state.walletError = null
+    render()
+    
+    try {
+      const result = await connectWallet()
+      
+      // Update state with connection result
+      state.connected = true
+      state.address = result.address
+      state.chainId = result.chainId as (999 | 998)
+      state.isConnecting = false
+      state.connectorName = result.connector
+      state.walletError = null
+      
+      playSound([523, 659, 784])
+      toast('Wallet connected!', 'success')
+      render()
+      
+      // Show welcome dialogue
+      setTimeout(() => showRandomDialogue('walletConnected'), 100)
+      
+    } catch (error) {
+      state.isConnecting = false
+      
+      if (error instanceof WalletError) {
+        state.walletError = error.type
+        
+        // Don't show error toast for user rejection - that's intentional
+        if (error.type !== 'USER_REJECTED') {
+          toast(getErrorMessage(error), 'error')
+        }
+      } else {
+        state.walletError = 'UNKNOWN'
+        toast('Connection failed. Please try again.', 'error')
+      }
+      
+      render()
+    }
+  } else {
+    // Disconnect wallet
+    try {
+      await disconnectWallet()
+      
+      state.connected = false
+      state.address = ''
+      state.chainId = null
+      state.connectorName = null
+      state.walletError = null
+      
+      playSound([400, 300])
+      toast('Wallet disconnected')
+      render()
+      
+      // Show disconnect dialogue
+      setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
+      
+    } catch (error) {
+      console.error('[Wallet] Disconnect failed:', error)
+      // Force disconnect state even if wagmi fails
+      state.connected = false
+      state.address = ''
+      state.chainId = null
+      render()
+    }
+  }
 }
 
 async function handlePlaceOrder() {
@@ -271,15 +354,9 @@ export function setupDelegatedEvents() {
       return
     }
 
+    // Wallet button - async with real wallet connection
     if (target.closest('#wallet-btn')) {
-      if (!state.connected) {
-        state.connected = true
-        state.address = '0x1a2b3c4d5e6f7890abcdef1234567890abcdef12'
-        playSound([523, 659, 784])
-        toast('Wallet connected!', 'success')
-        render()
-        setTimeout(() => showRandomDialogue('walletConnected'), 0)
-      }
+      handleWalletClick()
       return
     }
 
