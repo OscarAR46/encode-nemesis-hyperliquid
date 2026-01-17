@@ -1,15 +1,172 @@
+/* Tablet - Landscape */
+@media (max-width: 1200px) {
+  .content-area { width: 340px; }
+  .avatar-area { width: 35%; left: 3%; }
+}
+
+/* Tablet - Portrait */
 @media (max-width: 900px) {
-  .avatar-area { display: none; }
-  .panels-container { right: 12px; left: 12px; width: auto; }
-  .dialogue-container { width: 90%; }
-  .dialogue-box { padding-left: 32px; }
+  .avatar-area {
+    width: 30%;
+    left: 2%;
+    opacity: 0.4;
+  }
+  .avatar-area.mode-small,
+  .avatar-area.mode-off {
+    opacity: 0;
+  }
+  .content-area {
+    width: 100%;
+    left: 0;
+    right: 0;
+    padding: 12px;
+  }
+  .panels-container {
+    padding: 0;
+    width: 100%;
+  }
+  .dialogue-container {
+    width: 94%;
+    left: 50%;
+  }
+  .dialogue-box { padding-left: 24px; padding-right: 24px; }
   .dialogue-portrait { display: none; }
-  .header { padding: 0 12px; }
+  .dialogue-controls { opacity: 1; } /* Always visible on touch */
+  .header { padding: 0 12px; gap: 8px; }
   .logo-tagline { display: none; }
   .header-stats { display: none; }
-  .full-page { padding: 12px; }
+  .full-page { padding: 12px 0; }
   .portfolio-stats { grid-template-columns: repeat(2, 1fr); }
   .title-logo { font-size: 48px; letter-spacing: 8px; }
   .connection-indicator { bottom: 12px; left: 12px; padding: 6px 10px; }
   .diagnostic-panel { width: calc(100% - 24px); left: 12px; bottom: 60px; }
+  .mode-toggle { gap: 2px; }
+  .mode-btn { padding: 6px 8px; font-size: 9px; }
+  .nav-btn { padding: 8px 10px; font-size: 10px; }
+  .wallet-btn { padding: 8px 12px; font-size: 10px; }
+}
+
+/* Mobile - Large */
+@media (max-width: 600px) {
+  .avatar-area { display: none; }
+  .main-interface { padding: 8px; }
+  .header {
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 6px;
+  }
+  .logo { order: 1; }
+  .logo-text { font-size: 16px; }
+  .nav {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .mode-toggle { order: 2; }
+  .wallet-btn { order: 2; margin-left: auto; }
+  .nav-btn {
+    padding: 8px 12px;
+    font-size: 10px;
+    flex: 1;
+    justify-content: center;
+  }
+  .dialogue-container {
+    width: 96%;
+    bottom: 16px;
+    height: 130px;
+  }
+  .dialogue-box {
+    padding: 16px 20px;
+    padding-left: 20px;
+  }
+  .dialogue-text { font-size: 14px; line-height: 1.5; min-height: 40px; }
+  .dialogue-name { font-size: 12px; margin-bottom: 6px; }
+  .dialogue-controls {
+    top: 8px;
+    right: 12px;
+    gap: 6px;
+  }
+  .dialogue-ctrl-btn { width: 32px; height: 32px; }
+  .dialogue-ctrl-btn svg { width: 16px; height: 16px; }
+  .dialogue-continue { bottom: 10px; right: 16px; }
+  .content-area { padding: 8px; }
+  .panel-head { padding: 12px; }
+  .panel-body { padding: 10px; }
+  .order-tabs { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .order-tab { padding: 10px 8px; font-size: 11px; }
+  .form-input { padding: 12px; font-size: 16px; } /* Prevent zoom on iOS */
+  .order-btn { padding: 14px; font-size: 13px; }
+  .pos-tabs { flex-wrap: wrap; gap: 6px; }
+  .pos-tab { padding: 8px 12px; }
+  .title-logo { font-size: 36px; letter-spacing: 6px; }
+  .title-tagline { font-size: 12px; }
+  .title-start { font-size: 11px; }
+  .portfolio-stat-value { font-size: 18px; }
+  .lb-item {
+    grid-template-columns: 28px 1fr;
+    gap: 8px;
+  }
+  .lb-pnl {
+    grid-column: 2;
+    font-size: 12px;
+  }
+  .feed-item { padding: 12px; }
+}
+
+/* Mobile - Small */
+@media (max-width: 400px) {
+  .header { padding: 6px; }
+  .logo-text { font-size: 14px; letter-spacing: 1px; }
+  .logo-mark { width: 20px; height: 20px; }
+  .nav-btn { padding: 6px 8px; font-size: 9px; }
+  .mode-toggle { display: none; } /* Hide mode toggle on very small screens */
+  .wallet-btn { padding: 6px 10px; font-size: 9px; }
+  .content-area { padding: 6px; }
+  .panel { border-radius: 8px; }
+  .dialogue-container {
+    height: 110px;
+    bottom: 12px;
+  }
+  .dialogue-box { padding: 12px 16px; }
+  .dialogue-text { font-size: 13px; min-height: 36px; }
+  .dialogue-ctrl-btn { width: 28px; height: 28px; }
+  .title-logo { font-size: 28px; letter-spacing: 4px; }
+  .portfolio-stats { grid-template-columns: 1fr; }
+}
+
+/* Touch device enhancements */
+@media (hover: none) and (pointer: coarse) {
+  .dialogue-controls { opacity: 1; }
+  .dialogue-ctrl-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .nav-btn, .mode-btn, .wallet-btn {
+    min-height: 44px;
+  }
+  .order-tab {
+    min-height: 44px;
+  }
+  .pos-close {
+    padding: 8px 12px;
+    min-height: 44px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .dialogue-container {
+    height: 100px;
+    bottom: 8px;
+  }
+  .dialogue-box { padding: 10px 16px; }
+  .dialogue-text { font-size: 13px; min-height: 30px; }
+  .dialogue-name { margin-bottom: 4px; }
+  .avatar-area { height: calc(100% - 40px); }
+  .title-screen { gap: 12px; }
+  .title-logo { font-size: 32px; }
 }

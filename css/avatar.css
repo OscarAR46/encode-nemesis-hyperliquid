@@ -1,3 +1,23 @@
+/* Main content structure */
+.main-content {
+  position: relative;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.content-area {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+/* Avatar area - visible on all tabs */
 .avatar-area {
   position: absolute;
   left: 2%;
@@ -9,6 +29,7 @@
   justify-content: center;
   pointer-events: none;
   transition: opacity 0.4s ease;
+  z-index: 10;
 }
 
 .avatar-area.mode-small,

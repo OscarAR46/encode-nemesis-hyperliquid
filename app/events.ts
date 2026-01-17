@@ -2,19 +2,27 @@ import { state } from './state'
 import { render } from './render'
 import { playSound } from './audio'
 import { toast, getMarket, formatUSD } from './utils'
-import { 
-  connectSignal, 
-  disconnectSignal, 
-  setEmotion, 
-  skipTypewriter, 
-  showDialogue, 
-  showRandomDialogue, 
-  clearDismissTimer 
+import {
+  connectSignal,
+  disconnectSignal,
+  setEmotion,
+  skipTypewriter,
+  showDialogue,
+  showRandomDialogue,
+  clearDismissTimer,
+  togglePausePlay,
+  skipDialogue,
+  toggleAutoplay
 } from './signal'
-import { INTRO_DIALOGUE } from './dialogue'
+import { INTRO_DIALOGUE, RETURNING_INTRO_DIALOGUE } from './dialogue'
+import { saveUserData, clearUserData } from './storage'
 import type { NavTab, OrderTab, PosTab, AvatarMode } from './types'
 
 let swRegistered = false
+
+function getIntroDialogue() {
+  return state.isReturningPlayer ? RETURNING_INTRO_DIALOGUE : INTRO_DIALOGUE
+}
 
 function registerServiceWorker(): void {
   if (swRegistered || !('serviceWorker' in navigator)) return
@@ -39,15 +47,25 @@ function registerServiceWorker(): void {
 
 function advanceIntro() {
   if (state.isTyping) { skipTypewriter(); return }
+  const introDialogue = getIntroDialogue()
   state.introIndex++
-  if (state.introIndex >= INTRO_DIALOGUE.length) {
+  if (state.introIndex >= introDialogue.length) {
     state.introComplete = true
     state.scene = 'main'
     playSound([523, 659, 784])
+    // Save immediately so returning player detection works on refresh
+    saveUserData()
     render()
-    setTimeout(() => showRandomDialogue('idle'), 500)
+    // Show trade tab tutorial for new players, idle for returning
+    if (!state.tutorialComplete && !state.tabTutorialShown.trade) {
+      state.tabTutorialShown.trade = true
+      saveUserData()
+      setTimeout(() => showRandomDialogue('tutorialTrade'), 500)
+    } else {
+      setTimeout(() => showRandomDialogue('idle'), 500)
+    }
   } else {
-    showDialogue(INTRO_DIALOGUE[state.introIndex])
+    showDialogue(introDialogue[state.introIndex])
   }
 }
 
@@ -59,7 +77,7 @@ function handleTitleClick() {
     playSound([500])
     registerServiceWorker()
     connectSignal(() => {
-      showDialogue(INTRO_DIALOGUE[0])
+      showDialogue(getIntroDialogue()[0])
     })
   } else {
     advanceIntro()
@@ -84,6 +102,7 @@ function handleDialogueClick() {
   if (state.isTyping) {
     skipTypewriter()
   } else {
+    // Always show generic idle dialogue when clicking through
     showRandomDialogue('idle')
   }
   playSound([500])
@@ -170,6 +189,34 @@ export function setupDelegatedEvents() {
   app.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
 
+    // Selection screen handlers
+    if (state.scene === 'selection') {
+      if (target.closest('#btn-continue')) {
+        // Continue with saved data - go to title as returning player
+        state.scene = 'title'
+        playSound([523, 659, 784])
+        render()
+        return
+      }
+      if (target.closest('#btn-new-game')) {
+        // Clear saved data and start fresh
+        clearUserData()
+        state.isReturningPlayer = false
+        state.tutorialComplete = false
+        state.tabTutorialShown = {
+          trade: false,
+          feed: false,
+          leaderboard: false,
+          portfolio: false,
+        }
+        state.scene = 'title'
+        playSound([400, 500, 600])
+        render()
+        return
+      }
+      return
+    }
+
     if (state.scene === 'title' && target.closest('#title-scene')) {
       handleTitleClick()
       return
@@ -182,6 +229,21 @@ export function setupDelegatedEvents() {
         state.nav = nav
         playSound([600])
         render()
+
+        // Determine which dialogue to show
+        const tabName = nav.charAt(0).toUpperCase() + nav.slice(1)
+
+        if (!state.tutorialComplete && !state.tabTutorialShown[nav]) {
+          // First time on this tab - show tutorial
+          state.tabTutorialShown[nav] = true
+          saveUserData()
+          const tutorialKey = `tutorial${tabName}` as keyof typeof import('./dialogue').DIALOGUE
+          setTimeout(() => showRandomDialogue(tutorialKey), 300)
+        } else {
+          // Already visited - show idle dialogue for this tab
+          const idleKey = `idle${tabName}` as keyof typeof import('./dialogue').DIALOGUE
+          setTimeout(() => showRandomDialogue(idleKey), 300)
+        }
       }
       return
     }
@@ -193,6 +255,7 @@ export function setupDelegatedEvents() {
         const prevMode = state.avatarMode
         state.avatarMode = mode
         playSound([500])
+        saveUserData()
 
         if (mode === 'off' && prevMode !== 'off') {
           disconnectSignal()
@@ -215,7 +278,7 @@ export function setupDelegatedEvents() {
         playSound([523, 659, 784])
         toast('Wallet connected!', 'success')
         render()
-        setTimeout(() => showRandomDialogue('connect'), 0)
+        setTimeout(() => showRandomDialogue('walletConnected'), 0)
       }
       return
     }
@@ -238,8 +301,30 @@ export function setupDelegatedEvents() {
       return
     }
 
+    // Dialogue control buttons (work in both title and main scenes)
+    if (target.closest('#dialogue-pause-play')) {
+      e.stopPropagation()
+      togglePausePlay()
+      playSound([500])
+      return
+    }
+
+    if (target.closest('#dialogue-skip')) {
+      e.stopPropagation()
+      skipDialogue()
+      playSound([600])
+      return
+    }
+
+    if (target.closest('#dialogue-autoplay')) {
+      e.stopPropagation()
+      toggleAutoplay()
+      playSound([500])
+      return
+    }
+
     if (state.scene === 'main') {
-      if (target.closest('#dialogue-box')) {
+      if (target.closest('#dialogue-box') && !target.closest('.dialogue-controls')) {
         handleDialogueClick()
         return
       }
@@ -324,10 +409,18 @@ export function setupDelegatedEvents() {
 
     const modalOption = target.closest('.modal-option') as HTMLElement | null
     if (modalOption) {
-      state.selectedMarket = modalOption.dataset.id || state.markets[0].id
-      state.showMarketModal = false
-      playSound([500])
-      render()
+      const newMarket = modalOption.dataset.id || state.markets[0].id
+      if (state.selectedMarket !== newMarket) {
+        state.selectedMarket = newMarket
+        state.showMarketModal = false
+        playSound([500])
+        render()
+        // Show dialogue when changing market
+        setTimeout(() => showRandomDialogue('marketChange'), 200)
+      } else {
+        state.showMarketModal = false
+        render()
+      }
       return
     }
   })

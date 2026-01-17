@@ -49,3 +49,125 @@
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+
+/* Selection Screen */
+.selection-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  z-index: 10;
+  gap: 12px;
+}
+
+.selection-screen .title-logo {
+  margin-bottom: 8px;
+}
+
+.selection-screen .title-tagline {
+  margin-bottom: 32px;
+}
+
+.selection-message {
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--accent-cyan);
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px rgba(100, 180, 255, 0.4);
+}
+
+.selection-question {
+  font-size: 16px;
+  color: var(--text-mid);
+  margin-bottom: 32px;
+}
+
+.selection-buttons {
+  display: flex;
+  gap: 24px;
+}
+
+.selection-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 40px;
+  background: rgba(20, 40, 70, 0.8);
+  border: 2px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.selection-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(100, 180, 255, 0.2);
+}
+
+.selection-btn.continue:hover {
+  border-color: var(--yes-color);
+  background: rgba(96, 192, 128, 0.15);
+}
+
+.selection-btn.new-game:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(100, 180, 255, 0.15);
+}
+
+.selection-btn-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-dim);
+  transition: color 0.3s ease;
+}
+
+.selection-btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.selection-btn.continue:hover .selection-btn-icon {
+  color: var(--yes-color);
+}
+
+.selection-btn.new-game:hover .selection-btn-icon {
+  color: var(--accent-cyan);
+}
+
+.selection-btn-text {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-bright);
+  letter-spacing: 2px;
+}
+
+.selection-btn-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+/* Mobile responsive for selection screen */
+@media (max-width: 600px) {
+  .selection-buttons {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .selection-btn {
+    padding: 20px 32px;
+    min-width: 200px;
+  }
+  .selection-message {
+    font-size: 16px;
+    text-align: center;
+    padding: 0 20px;
+  }
+  .selection-question {
+    font-size: 14px;
+  }
+}
