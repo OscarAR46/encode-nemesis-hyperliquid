@@ -48,12 +48,9 @@ export const state: AppState = {
   isReturningPlayer: false,
   tutorialComplete: false,
   currentTutorialStep: 0,
-  tabTutorialShown: {
-    trade: false,
-    feed: false,
-    leaderboard: false,
-    portfolio: false,
-  },
+  tabTutorialShown: { trade: false, feed: false, leaderboard: false, portfolio: false },
+  prices: {},
+  lastPriceUpdate: 0,
 }
 
 export function initData() {
@@ -107,13 +104,13 @@ export function updateWalletState(walletState: {
   state.chainId = walletState.chainId as (999 | 998 | null)
   state.isConnecting = walletState.isConnecting
   state.connectorName = walletState.connector
-  
-  if (walletState.connected) {
-    state.walletError = null
-  }
+  if (walletState.connected) state.walletError = null
 }
 
-// Expose state to dev console for debugging (must be AFTER state is declared!)
+export function getLivePrice(coin: string): number | null {
+  return state.prices[coin] ?? state.prices[coin.toUpperCase()] ?? null
+}
+
 if (typeof window !== 'undefined') {
   (window as any).__nemesisState = state
 }

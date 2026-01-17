@@ -1,23 +1,23 @@
-export type Scene = 'selection' | 'title' | 'main'
+export type Scene = 'title' | 'selection' | 'main'
 export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
-export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
+export type OrderTab = 'yes' | 'no'
 export type PosTab = 'positions' | 'orders' | 'history'
 export type AvatarMode = 'full' | 'small' | 'off'
-export type Emotion = 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'inquisitive' | 'talkative' | 'excited' | 'loss'
+export type Emotion = 'intro' | 'kawaii' | 'happy' | 'excited' | 'pleased' | 'sly' | 'talkative' | 'inquisitive' | 'concerned' | 'loss'
 export type DialogueSignal = 'off' | 'connecting' | 'connected' | 'disconnecting'
 export type DialoguePlayState = 'playing' | 'paused'
+export type MarketCategory = 'all' | 'crypto' | 'forex' | 'commodities' | 'custom'
+export type PositionSide = 'yes' | 'no'
+export type PositionType = 'standard' | 'lobby' | 'duel'
+export type PositionStatus = 'open' | 'closed' | 'pending'
+export type OrderStatus = 'pending' | 'filled' | 'cancelled'
+export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'
 
-// Wallet types
-export type WalletErrorType =
-  | 'USER_REJECTED'
-  | 'CHAIN_NOT_SUPPORTED'
-  | 'CONNECTOR_NOT_FOUND'
-  | 'ALREADY_CONNECTED'
-  | 'NOT_CONNECTED'
-  | 'SWITCH_CHAIN_FAILED'
-  | 'UNKNOWN'
-
-export type SupportedChainId = 999 | 998
+export interface DialogueLine {
+  text: string
+  emotion: Emotion
+  showName?: boolean
+}
 
 export interface Market {
   id: string
@@ -34,23 +34,23 @@ export interface Position {
   id: string
   marketId: string
   market: string
-  side: 'yes' | 'no'
+  side: PositionSide
   size: number
   entry: number
   current: number
   pnl: number
-  type: 'standard' | 'lobby' | 'duel'
-  status: 'open' | 'closed'
+  type: PositionType
+  status: PositionStatus
 }
 
 export interface Order {
   id: string
   marketId: string
   market: string
-  side: 'yes' | 'no'
+  side: PositionSide
   size: number
   price: number
-  status: 'pending' | 'filled' | 'cancelled'
+  status: OrderStatus
 }
 
 export interface FeedItem {
@@ -66,10 +66,17 @@ export interface LeaderboardEntry {
   pnl: number
 }
 
-export interface DialogueLine {
-  text: string
-  emotion: Emotion
-  showName?: boolean
+export interface PanelStates {
+  market: boolean
+  order: boolean
+  positions: boolean
+}
+
+export interface TabTutorialState {
+  trade: boolean
+  feed: boolean
+  leaderboard: boolean
+  portfolio: boolean
 }
 
 export interface AppState {
@@ -77,15 +84,12 @@ export interface AppState {
   introIndex: number
   introComplete: boolean
   introStarted: boolean
-  
-  // Wallet state
   connected: boolean
   address: string
-  chainId: SupportedChainId | null
+  chainId: 999 | 998 | null
   isConnecting: boolean
-  walletError: WalletErrorType | null
+  walletError: string | null
   connectorName: string | null
-  
   balance: number
   nav: NavTab
   orderTab: OrderTab
@@ -96,10 +100,10 @@ export interface AppState {
   avatarMode: AvatarMode
   currentEmotion: Emotion
   currentDialogue: string
-  dialogueQueue: string[]
+  dialogueQueue: DialogueLine[]
   isTyping: boolean
   typewriterIndex: number
-  lastDialogueByCategory: Record<string, string>
+  lastDialogueByCategory: Record<string, number>
   markets: Market[]
   positions: Position[]
   orders: Order[]
@@ -109,8 +113,8 @@ export interface AppState {
   stake: number
   targetAddress: string
   processing: boolean
-  panelStates: { market: boolean; order: boolean; positions: boolean }
-  marketFilter: string
+  panelStates: PanelStates
+  marketFilter: MarketCategory
   particlesHtml: string
   dialogueSignal: DialogueSignal
   dialogueAtEnd: boolean
@@ -121,7 +125,7 @@ export interface AppState {
   isReturningPlayer: boolean
   tutorialComplete: boolean
   currentTutorialStep: number
-  tabTutorialShown: Record<NavTab, boolean>
+  tabTutorialShown: TabTutorialState
+  prices: Record<string, number>
+  lastPriceUpdate: number
 }
-
-export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'

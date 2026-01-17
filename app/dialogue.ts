@@ -1,13 +1,13 @@
 import type { Emotion, DialogueLine } from '@app/types'
 
 export const INTRO_DIALOGUE: DialogueLine[] = [
-  { text: "Ah... you're finally here. I've been waiting for someone like you.", emotion: 'pleased', showName: false },
-  { text: "They call me Nemesis. Every trader needs one, you know~. Let me show you what we can do together...", emotion: 'talkative', showName: false },
+  { text: "Ah... you're finally here. I've been waiting for someone like you.", emotion: 'intro', showName: false },
+  { text: "They call me Nemesis. Every trader needs one, you know~. Let me show you what we can do together...", emotion: 'intro', showName: false },
 ]
 
 export const RETURNING_INTRO_DIALOGUE: DialogueLine[] = [
-  { text: "Welcome back~ I've been waiting for you.", emotion: 'happy', showName: false },
-  { text: "Ready to dominate the markets again? Let's go!", emotion: 'excited', showName: false },
+  { text: "Welcome back~ I've been waiting for you.", emotion: 'intro', showName: false },
+  { text: "Ready to dominate the markets again? Let's go!", emotion: 'intro', showName: false },
 ]
 
 export const DIALOGUE = {
@@ -138,5 +138,44 @@ export const DIALOGUE = {
     { text: "You've got this! Trust your instincts~", emotion: 'happy' as Emotion },
     { text: "Fortune favors the bold, trader.", emotion: 'pleased' as Emotion },
     { text: "I sense a winning streak coming...", emotion: 'sly' as Emotion },
+  ],
+  pricePump: [
+    { text: "Green candles~ The bulls are charging!", emotion: 'excited' as Emotion },
+    { text: "Price is pumping! Did you catch that?", emotion: 'happy' as Emotion },
+    { text: "Up we go~ Someone's making money...", emotion: 'pleased' as Emotion },
+    { text: "The market's heating up!", emotion: 'talkative' as Emotion },
+  ],
+  priceDump: [
+    { text: "Red candles... The bears are here.", emotion: 'concerned' as Emotion },
+    { text: "Price is falling! Hold tight...", emotion: 'inquisitive' as Emotion },
+    { text: "Down it goes~ Someone's getting liquidated.", emotion: 'sly' as Emotion },
+    { text: "Selling pressure! Careful out there.", emotion: 'concerned' as Emotion },
+  ],
+  priceMassivePump: [
+    { text: "WHOA! That's a massive green candle!", emotion: 'excited' as Emotion },
+    { text: "The market is FLYING! This is insane~", emotion: 'excited' as Emotion },
+    { text: "Shorts are getting destroyed right now!", emotion: 'sly' as Emotion },
+    { text: "I haven't seen a pump like this in a while!", emotion: 'happy' as Emotion },
+  ],
+  priceMassiveDump: [
+    { text: "YIKES! That's a scary red candle...", emotion: 'loss' as Emotion },
+    { text: "The market is CRASHING! Are you okay?", emotion: 'concerned' as Emotion },
+    { text: "Longs are getting liquidated everywhere!", emotion: 'concerned' as Emotion },
+    { text: "That's... a lot of selling pressure.", emotion: 'inquisitive' as Emotion },
+  ],
+  priceExtremePump: [
+    { text: "THIS IS UNPRECEDENTED! The market has gone VERTICAL!", emotion: 'excited' as Emotion },
+    { text: "I... I've never seen a candle this big! HISTORY!", emotion: 'excited' as Emotion },
+    { text: "ABSOLUTE MADNESS! The bulls have taken over!", emotion: 'happy' as Emotion },
+  ],
+  priceExtremeDump: [
+    { text: "OH NO... This is a BLACK SWAN event!", emotion: 'loss' as Emotion },
+    { text: "The market is in FREEFALL! Brace yourself!", emotion: 'concerned' as Emotion },
+    { text: "This is... devastating. Liquidations everywhere.", emotion: 'loss' as Emotion },
+  ],
+  priceVolatile: [
+    { text: "Markets are going crazy right now! Be careful~", emotion: 'concerned' as Emotion },
+    { text: "So much volatility! Wicks everywhere...", emotion: 'inquisitive' as Emotion },
+    { text: "Price is bouncing all over the place!", emotion: 'talkative' as Emotion },
   ],
 }
