@@ -1,4 +1,5 @@
 import { port, serveHealth, staticAssets } from "./serve.shared"
+import { handleLedgerRoutes, handleCorsPreflightForLedger } from "./api/ledger"
 import swTemplate from "./sw.template.js" with { type: "text" }
 
 import indexHtml from "./index.html" with { type: "file" }
@@ -16,7 +17,18 @@ const prodAssets = new Map<string, { filePath: string; contentType: string }>([
 ])
 
 async function fetch(request: Request): Promise<Response> {
-  const path = new URL(request.url).pathname
+  const url = new URL(request.url)
+  const path = url.pathname
+
+  // Handle CORS preflight for Ledger API
+  if (request.method === 'OPTIONS') {
+    const corsResponse = handleCorsPreflightForLedger(path)
+    if (corsResponse) return corsResponse
+  }
+
+  // Ledger API routes (before static file handling)
+  const ledgerResponse = await handleLedgerRoutes(path, url)
+  if (ledgerResponse) return ledgerResponse
 
   if (path === "/sw.js") {
     const sw = swTemplate.replace(/__CACHE_VERSION__/g, String(BUILD_VERSION))
@@ -38,4 +50,11 @@ async function fetch(request: Request): Promise<Response> {
 }
 
 Bun.serve({ port, fetch, idleTimeout: 0 })
-console.log(`\nNEMESIS [${BUILD_VERSION}]\nhttp://localhost:${port}\n`)
+console.log(`
+
+  NEMESIS [${BUILD_VERSION}]
+  http://localhost:${port}
+
+  • Mode: Production
+  • Ledger API: /v1/*
+`)
