@@ -8,7 +8,17 @@ export function render() {
   const app = document.getElementById('app')
   if (!app) return
 
-  const html = state.scene === 'title' ? renderTitleScreen() : renderMainInterface()
+  let html: string
+  switch (state.scene) {
+    case 'selection':
+      html = renderSelectionScreen()
+      break
+    case 'title':
+      html = renderTitleScreen()
+      break
+    default:
+      html = renderMainInterface()
+  }
 
   morphdom(app, `<div id="app">${html}</div>`, {
     childrenOnly: true,
@@ -21,6 +31,35 @@ export function render() {
   })
 
   updateDialogueMask()
+}
+
+function renderSelectionScreen(): string {
+  return `
+    <div class="scene" id="selection-scene">
+      <div class="bg-layer"></div>
+      <div class="bg-shimmer"></div>
+      <div class="bg-particles">${state.particlesHtml}</div>
+      <div class="water-line"></div>
+      <div class="selection-screen">
+        <div class="title-logo">NEMESIS</div>
+        <div class="title-tagline">Every trader needs a Nemesis.</div>
+        <div class="selection-message">Ah! I see you have dueled before~</div>
+        <div class="selection-question">Would you like to continue?</div>
+        <div class="selection-buttons">
+          <button class="selection-btn continue" id="btn-continue">
+            <span class="selection-btn-icon">${ICONS.play}</span>
+            <span class="selection-btn-text">Continue</span>
+            <span class="selection-btn-desc">Resume where you left off</span>
+          </button>
+          <button class="selection-btn new-game" id="btn-new-game">
+            <span class="selection-btn-icon">${ICONS.cross}</span>
+            <span class="selection-btn-text">New Game</span>
+            <span class="selection-btn-desc">Start fresh as a new trader</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `
 }
 
 function renderTitleScreen(): string {
@@ -36,10 +75,22 @@ function renderTitleScreen(): string {
         <div class="title-start">— Click to begin —</div>
       </div>
       <div class="dialogue-container">
-        <div class="dialogue-box signal-${state.dialogueSignal}" id="dialogue-box">
+        <div class="dialogue-box signal-${state.dialogueSignal} ${state.autoplayEnabled && state.dialogueAtEnd && !state.isTyping ? 'autoplay-active' : ''}" id="dialogue-box">
           <div class="dialogue-name" id="dialogue-name">NEMESIS</div>
           <div class="dialogue-text" id="dialogue-text">${state.dialogueSignal === 'connected' ? state.currentDialogue : ''}</div>
-          <div class="dialogue-continue">▼</div>
+          <div class="dialogue-controls">
+            <button class="dialogue-ctrl-btn ${state.dialoguePlayState === 'paused' ? 'active' : ''}" id="dialogue-pause-play" title="${state.dialoguePlayState === 'paused' ? 'Play' : 'Pause'}">
+              ${state.dialoguePlayState === 'paused' ? ICONS.play : ICONS.pause}
+            </button>
+            <button class="dialogue-ctrl-btn" id="dialogue-skip" title="Skip">
+              ${ICONS.skip}
+            </button>
+            <button class="dialogue-ctrl-btn ${state.autoplayEnabled ? 'active' : ''}" id="dialogue-autoplay" title="Autoplay ${state.autoplayEnabled ? 'On' : 'Off'}">
+              ${ICONS.autoplay}
+            </button>
+          </div>
+          <div class="dialogue-continue">${state.autoplayEnabled ? '' : '▼'}</div>
+          <div class="dialogue-autoplay-bar"></div>
         </div>
         <div class="dialogue-orbital">
           <div class="orbital-ring orbital-ring-1"></div>
@@ -88,19 +139,36 @@ function renderMainInterface(): string {
           <button class="wallet-btn ${state.connected ? 'connected' : ''}" id="wallet-btn">${state.connected ? truncAddr(state.address) : 'Connect Wallet'}</button>
         </header>
         <div class="main-content">
-          ${state.nav === 'trade' ? renderTradeContent() : ''}
-          ${state.nav === 'feed' ? renderFeedPage() : ''}
-          ${state.nav === 'leaderboard' ? renderLeaderboardPage() : ''}
-          ${state.nav === 'portfolio' ? renderPortfolioPage() : ''}
+          <div class="avatar-area mode-${state.avatarMode}">
+            <img id="avatar-img" class="avatar-img" src="nemesis-chan/${state.currentEmotion}.png" alt="Nemesis">
+          </div>
+          <div class="content-area">
+            ${state.nav === 'trade' ? renderTradeContent() : ''}
+            ${state.nav === 'feed' ? renderFeedPage() : ''}
+            ${state.nav === 'leaderboard' ? renderLeaderboardPage() : ''}
+            ${state.nav === 'portfolio' ? renderPortfolioPage() : ''}
+          </div>
         </div>
       </div>
       ${renderConnectionIndicator()}
       ${renderDiagnosticPanel()}
       <div class="dialogue-container ${isOffMode ? 'off-mode' : ''}">
-        <div class="dialogue-box signal-${state.dialogueSignal}" id="dialogue-box">
+        <div class="dialogue-box signal-${state.dialogueSignal} ${state.autoplayEnabled && state.dialogueAtEnd && !state.isTyping ? 'autoplay-active' : ''}" id="dialogue-box">
           <div class="dialogue-name visible" id="dialogue-name">NEMESIS</div>
           <div class="dialogue-text" id="dialogue-text">${state.dialogueSignal === 'connected' ? state.currentDialogue : ''}</div>
-          <div class="dialogue-continue">▼</div>
+          <div class="dialogue-controls">
+            <button class="dialogue-ctrl-btn ${state.dialoguePlayState === 'paused' ? 'active' : ''}" id="dialogue-pause-play" title="${state.dialoguePlayState === 'paused' ? 'Play' : 'Pause'}">
+              ${state.dialoguePlayState === 'paused' ? ICONS.play : ICONS.pause}
+            </button>
+            <button class="dialogue-ctrl-btn" id="dialogue-skip" title="Skip">
+              ${ICONS.skip}
+            </button>
+            <button class="dialogue-ctrl-btn ${state.autoplayEnabled ? 'active' : ''}" id="dialogue-autoplay" title="Autoplay ${state.autoplayEnabled ? 'On' : 'Off'}">
+              ${ICONS.autoplay}
+            </button>
+          </div>
+          <div class="dialogue-continue">${state.autoplayEnabled ? '' : '▼'}</div>
+          <div class="dialogue-autoplay-bar"></div>
         </div>
         <div class="dialogue-portrait ${state.avatarMode === 'small' || isOffMode ? 'visible' : ''}" id="dialogue-portrait">
           <img id="portrait-img" src="nemesis-chan/${state.currentEmotion}.png" alt="">
@@ -143,9 +211,6 @@ function renderTradeContent(): string {
   }
 
   return `
-    <div class="avatar-area mode-${state.avatarMode}">
-      <img id="avatar-img" class="avatar-img" src="nemesis-chan/${state.currentEmotion}.png" alt="Nemesis">
-    </div>
     <div class="panels-container">
       <div class="panel ${state.panelStates.market ? '' : 'collapsed'}">
         <div class="panel-head" data-panel="market"><span class="panel-title">Market</span><span class="panel-toggle">${ICONS.chevron}</span></div>

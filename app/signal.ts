@@ -3,12 +3,15 @@ import { render } from './render'
 import { playCRTOn, playCRTOff, playTypeSound } from './audio'
 import { randomFrom } from './utils'
 import { DIALOGUE } from './dialogue'
+import { saveUserData } from './storage'
 import type { Emotion, DialogueLine } from './types'
 
 export const CRT_ANIMATION_MS = 300
+export const AUTOPLAY_DELAY_MS = 4000
 
 let typewriterTimer: number | null = null
 let dialogueDismissTimer: number | null = null
+let autoplayTimer: number | null = null
 
 export function connectSignal(callback?: () => void) {
   if (state.dialogueSignal === 'connected' || state.dialogueSignal === 'connecting') {
@@ -71,6 +74,7 @@ export function typewriterEffect(text: string, onComplete?: () => void) {
     clearInterval(typewriterTimer)
     typewriterTimer = null
   }
+  clearAutoplayTimer()
   state.isTyping = true
   state.typewriterIndex = 0
   state.currentDialogue = ''
@@ -78,14 +82,19 @@ export function typewriterEffect(text: string, onComplete?: () => void) {
 
   if (!document.getElementById('dialogue-text')) return
 
+  if (state.dialoguePlayState === 'paused') {
+    state.dialogueQueue = [text]
+    return
+  }
+
   playTypeSound()
 
   typewriterTimer = window.setInterval(() => {
     const textEl = document.getElementById('dialogue-text')
-    if (!textEl) {
+    if (!textEl || state.dialoguePlayState === 'paused') {
       if (typewriterTimer) clearInterval(typewriterTimer)
       typewriterTimer = null
-      state.isTyping = false
+      if (state.dialoguePlayState !== 'paused') state.isTyping = false
       return
     }
 
@@ -98,6 +107,9 @@ export function typewriterEffect(text: string, onComplete?: () => void) {
       typewriterTimer = null
       state.isTyping = false
       state.dialogueAtEnd = true
+      if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
+        startAutoplayTimer()
+      }
       if (onComplete) onComplete()
     }
   }, 35)
@@ -122,6 +134,104 @@ export function clearDismissTimer() {
     clearTimeout(dialogueDismissTimer)
     dialogueDismissTimer = null
   }
+}
+
+export function clearAutoplayTimer() {
+  if (autoplayTimer) {
+    clearTimeout(autoplayTimer)
+    autoplayTimer = null
+  }
+}
+
+export function togglePausePlay() {
+  if (state.dialoguePlayState === 'playing') {
+    state.dialoguePlayState = 'paused'
+    if (typewriterTimer) {
+      clearInterval(typewriterTimer)
+      typewriterTimer = null
+    }
+    clearAutoplayTimer()
+  } else {
+    state.dialoguePlayState = 'playing'
+    if (state.isTyping && state.dialogueQueue.length > 0) {
+      resumeTypewriter()
+    } else if (state.autoplayEnabled && state.dialogueAtEnd) {
+      startAutoplayTimer()
+    }
+  }
+  render()
+}
+
+export function skipDialogue() {
+  clearDismissTimer()
+  clearAutoplayTimer()
+
+  if (state.isTyping) {
+    skipTypewriter()
+  }
+
+  if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
+    startAutoplayTimer()
+  }
+}
+
+export function toggleAutoplay() {
+  state.autoplayEnabled = !state.autoplayEnabled
+  saveUserData()
+
+  if (state.autoplayEnabled && state.dialogueAtEnd && state.dialoguePlayState === 'playing') {
+    startAutoplayTimer()
+  } else {
+    clearAutoplayTimer()
+  }
+
+  render()
+}
+
+function startAutoplayTimer() {
+  clearAutoplayTimer()
+
+  if (!state.autoplayEnabled || state.dialoguePlayState === 'paused') return
+
+  autoplayTimer = window.setTimeout(() => {
+    autoplayTimer = null
+    if (state.autoplayEnabled && state.dialoguePlayState === 'playing' && state.introComplete) {
+      if (state.dialogueSignal === 'connected' && state.dialogueAtEnd) {
+        // Always show generic idle dialogue for continuous autoplay
+        showRandomDialogue('idle')
+      }
+    }
+  }, AUTOPLAY_DELAY_MS)
+}
+
+function resumeTypewriter() {
+  if (!document.getElementById('dialogue-text') || state.dialogueQueue.length === 0) return
+
+  playTypeSound()
+  const fullText = state.dialogueQueue[0]
+
+  typewriterTimer = window.setInterval(() => {
+    const textEl = document.getElementById('dialogue-text')
+    if (!textEl || state.dialoguePlayState === 'paused') {
+      if (typewriterTimer) clearInterval(typewriterTimer)
+      typewriterTimer = null
+      return
+    }
+
+    if (state.typewriterIndex < fullText.length) {
+      state.currentDialogue += fullText[state.typewriterIndex]
+      textEl.textContent = state.currentDialogue
+      state.typewriterIndex++
+    } else {
+      if (typewriterTimer) clearInterval(typewriterTimer)
+      typewriterTimer = null
+      state.isTyping = false
+      state.dialogueAtEnd = true
+      if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
+        startAutoplayTimer()
+      }
+    }
+  }, 35)
 }
 
 export function startDismissTimer() {

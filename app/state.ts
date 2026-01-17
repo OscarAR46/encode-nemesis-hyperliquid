@@ -1,7 +1,7 @@
 import type { AppState } from './types'
 
 export const state: AppState = {
-  scene: 'title',
+  scene: 'selection',
   introIndex: 0,
   introComplete: false,
   introStarted: false,
@@ -35,8 +35,19 @@ export const state: AppState = {
   particlesHtml: '',
   dialogueSignal: 'off',
   dialogueAtEnd: false,
+  dialoguePlayState: 'playing',
+  autoplayEnabled: false,
   connectionState: 'CONNECTED',
   lastConnectionDialogue: 0,
+  isReturningPlayer: false,
+  tutorialComplete: false,
+  currentTutorialStep: 0,
+  tabTutorialShown: {
+    trade: false,
+    feed: false,
+    leaderboard: false,
+    portfolio: false,
+  },
 }
 
 export function initData() {
