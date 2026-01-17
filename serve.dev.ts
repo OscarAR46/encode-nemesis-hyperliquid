@@ -1,41 +1,9 @@
 import { watch, watchFile } from "fs"
-import { port, getContentType, serveHealth } from "./serve.shared"
+import { port, getContentType, serveHealth, staticAssets } from "./serve.shared"
 import swTemplate from "./sw.template.js" with { type: "text" }
-
-import fontQuicksand from "./fonts/Quicksand/Quicksand-VariableFont_wght.woff2" with { type: "file" }
-import fontCinzel from "./fonts/Cinzel/Cinzel-VariableFont_wght.woff2" with { type: "file" }
-
-import nemesisConcerned from "./nemesis-chan/concerned.png" with { type: "file" }
-import nemesisExcited from "./nemesis-chan/excited.png" with { type: "file" }
-import nemesisHappy from "./nemesis-chan/happy.png" with { type: "file" }
-import nemesisInquisitive from "./nemesis-chan/inquisitive.png" with { type: "file" }
-import nemesisKawaii from "./nemesis-chan/kawaii.png" with { type: "file" }
-import nemesisLoss from "./nemesis-chan/loss.png" with { type: "file" }
-import nemesisPleased from "./nemesis-chan/pleased.png" with { type: "file" }
-import nemesisSly from "./nemesis-chan/sly.png" with { type: "file" }
-import nemesisTalkative from "./nemesis-chan/talkative.png" with { type: "file" }
-
-import iconPng from "./icon.png" with { type: "file" }
 
 const DEBUG = process.env.DEBUG === "1"
 const DEV_BUILD_VERSION = `dev-${Date.now()}`
-
-/* Static assets baked in at startup - guarantees SW can cache them */
-const staticAssets = new Map<string, { filePath: string; contentType: string }>([
-  ["/icon.png", { filePath: iconPng, contentType: "image/png" }],
-  ["/favicon.ico", { filePath: iconPng, contentType: "image/x-icon" }],
-  ["/fonts/Quicksand/Quicksand-VariableFont_wght.woff2", { filePath: fontQuicksand, contentType: "font/woff2" }],
-  ["/fonts/Cinzel/Cinzel-VariableFont_wght.woff2", { filePath: fontCinzel, contentType: "font/woff2" }],
-  ["/nemesis-chan/concerned.png", { filePath: nemesisConcerned, contentType: "image/png" }],
-  ["/nemesis-chan/excited.png", { filePath: nemesisExcited, contentType: "image/png" }],
-  ["/nemesis-chan/happy.png", { filePath: nemesisHappy, contentType: "image/png" }],
-  ["/nemesis-chan/inquisitive.png", { filePath: nemesisInquisitive, contentType: "image/png" }],
-  ["/nemesis-chan/kawaii.png", { filePath: nemesisKawaii, contentType: "image/png" }],
-  ["/nemesis-chan/loss.png", { filePath: nemesisLoss, contentType: "image/png" }],
-  ["/nemesis-chan/pleased.png", { filePath: nemesisPleased, contentType: "image/png" }],
-  ["/nemesis-chan/sly.png", { filePath: nemesisSly, contentType: "image/png" }],
-  ["/nemesis-chan/talkative.png", { filePath: nemesisTalkative, contentType: "image/png" }],
-])
 
 function log(...args: unknown[]) {
   if (DEBUG) console.log(...args)

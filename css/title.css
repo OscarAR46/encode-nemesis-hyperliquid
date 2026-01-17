@@ -1,0 +1,51 @@
+.title-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.title-logo {
+  font-family: var(--font-title);
+  font-size: 72px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 12px;
+  text-shadow:
+    0 0 40px rgba(100, 180, 255, 0.6),
+    0 0 80px rgba(80, 150, 220, 0.4),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+  margin-bottom: 16px;
+  animation: title-glow 4s ease-in-out infinite;
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 40px rgba(100, 180, 255, 0.6), 0 0 80px rgba(80, 150, 220, 0.4), 0 4px 8px rgba(0, 0, 0, 0.5); }
+  50% { text-shadow: 0 0 60px rgba(100, 180, 255, 0.8), 0 0 120px rgba(80, 150, 220, 0.5), 0 4px 8px rgba(0, 0, 0, 0.5); }
+}
+
+.title-tagline {
+  font-size: 16px;
+  font-weight: 300;
+  color: var(--text-mid);
+  letter-spacing: 4px;
+  font-style: italic;
+  margin-bottom: 60px;
+}
+
+.title-start {
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 3px;
+  animation: blink 2s ease-in-out infinite;
+  cursor: pointer;
+  padding: 20px 40px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}

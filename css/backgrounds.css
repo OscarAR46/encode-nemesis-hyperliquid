@@ -1,0 +1,50 @@
+.bg-layer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+    var(--bg-dark) 0%,
+    var(--bg-mid) 25%,
+    var(--bg-water) 50%,
+    var(--bg-light) 65%,
+    var(--bg-water) 80%,
+    var(--bg-mid) 100%
+  );
+}
+
+.bg-shimmer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 40%, rgba(100, 180, 255, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 70% 60%, rgba(80, 160, 220, 0.08) 0%, transparent 50%);
+}
+
+.bg-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(180, 220, 255, 0.5);
+  border-radius: 50%;
+  animation: particle-float linear infinite;
+}
+
+@keyframes particle-float {
+  0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-20vh) translateX(50px); opacity: 0; }
+}
+
+.water-line {
+  position: absolute;
+  bottom: 35%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(120, 200, 255, 0.25) 30%, rgba(150, 220, 255, 0.35) 50%, rgba(120, 200, 255, 0.25) 70%, transparent 100%);
+}

@@ -114,10 +114,10 @@ This document describes the hackathon submission targeting five sponsor tracks s
 \begin{tikzpicture}[scale=0.85]
     \node[box, minimum width=3.5cm, minimum height=1.5cm] (nemesis) at (0,0) {NEMESIS\\Interface};
 
-    \node[realbox, minimum width=2cm] (lifi) at (-5.5, 2) {LI.FI\\Bridge};
+    \node[realbox, minimum width=2cm] (lifi) at (-5.5, 2) {LI.FI\\Routing};
     \node[realbox, minimum width=2cm] (valantis) at (-2.75, 2) {Valantis\\stHYPE};
-    \node[realbox, minimum width=2cm] (pear) at (0, 2) {Pear\\Execution};
-    \node[saltbox, minimum width=2cm] (salt) at (2.75, 2) {Salt\\Orchestration};
+    \node[realbox, minimum width=2cm] (pear) at (0, 2) {Pear\\Pair Trading};
+    \node[saltbox, minimum width=2cm] (salt) at (2.75, 2) {Salt\\Treasury};
     \node[realbox, minimum width=2cm] (insilico) at (5.5, 2) {Insilico\\Ledger};
 
     \node[realbox, minimum width=2cm] (oracle) at (-3, -2) {Oracle\\Price Feed};
@@ -150,9 +150,9 @@ The hackathon submission demonstrates real API integrations with all five sponso
 \textbf{Component} & \textbf{Hackathon Status} & \textbf{Transaction Type} \\
 \midrule
 Wallet Connection & Implemented & Real \\
-LI.FI Cross-Chain Bridge & Implemented & Real \\
+LI.FI Cross-Chain Routing & Implemented & Real \\
 Valantis stHYPE Deposit & Implemented & Real \\
-Pear Position Execution & Implemented & Real \\
+Pear Pair Trading & Implemented & Real \\
 Salt Organisation \& Robo Manager & Implemented & Real \\
 Insilico Trade Ledger API & Implemented & Real \\
 Oracle Price Feeds & Implemented & API Call \\
@@ -252,11 +252,11 @@ Users arrive on any chain with any token and can onboard to HyperEVM with a sing
     \item User lands on HyperEVM with USDC ready to trade
 \end{itemize}
 
-\subsection{Track 2: Valantis --- Yield Generation}
+\subsection{Track 2: Valantis --- Liquid Staking}
 
 \textbf{Prize Pool:} \$2,000
 
-Protocol treasury deposits to Valantis stHYPE for yield generation. The approximately 8\% APY on stHYPE provides sustainable protocol revenue.
+Valantis provides stHYPE, a liquid staking token for HYPE. Protocol treasury stakes HYPE to earn yield while maintaining liquidity.
 
 \begin{itemize}[leftmargin=*]
     \item Protocol treasury accumulates HYPE from fees
@@ -265,24 +265,24 @@ Protocol treasury deposits to Valantis stHYPE for yield generation. The approxim
     \item User escrow remains in USDC (no HYPE price exposure for users)
 \end{itemize}
 
-\subsection{Track 3: Pear Protocol --- Trade Execution}
+\subsection{Track 3: Pear Protocol --- Pair Trading}
 
 \textbf{Prize Pool:} \$3,500
 
-Pear provides perpetual position execution for hedging imbalanced prediction market exposure (prospective) and direct trading features.
+Pear provides non-custodial pair and basket trading on Hyperliquid. Users can execute simultaneous long/short positions with a single transaction.
 
 \begin{itemize}[leftmargin=*]
-    \item REST API integration for position management
-    \item Open long/short positions on supported pairs
-    \item Position monitoring and P\&L tracking
-    \item Prospective: automated hedging for protocol exposure
+    \item Execution API for pair and basket trades
+    \item Single-click open/close of long and short legs
+    \item Market, limit, and TWAP order types
+    \item Take-profit and stop-loss on price ratios
 \end{itemize}
 
-\subsection{Track 4: Salt --- Automated Strategy Execution}
+\subsection{Track 4: Salt --- Treasury Coordination}
 
 \textbf{Prize Pool:} \$1,000
 
-Salt provides the orchestration layer for non-custodial automated execution. This is the most architecturally significant integration.
+Salt is a treasury coordination platform using decentralised multi-party computation (dMPC). It enables self-custodial automated execution through policy-controlled accounts.
 
 \subsubsection{Core Concepts}
 
@@ -581,10 +581,10 @@ Build System & Nix Flakes \\
 DOM Updates & morphdom \\
 Wallet Connection & viem + @wagmi/core \\
 Mobile Wallets & WalletConnect v2 \\
-Cross-Chain Bridge & @lifi/sdk \\
-Trading Execution & Pear REST API \\
-MPC Orchestration & salt-sdk \\
-Yield Generation & Valantis stHYPE \\
+Cross-Chain Routing & @lifi/sdk \\
+Pair Trading & Pear Protocol API \\
+Treasury Coordination & salt-sdk \\
+Liquid Staking & Valantis stHYPE \\
 Price Feeds & HyperCore Oracle \\
 Trade Ledger & Hyperliquid Info API \\
 \bottomrule
@@ -615,10 +615,10 @@ Nemesis demonstrates how five hackathon track technologies can integrate into a 
 The hackathon submission delivers:
 
 \begin{itemize}[leftmargin=*]
-    \item Real LI.FI integration for cross-chain onboarding
-    \item Real Valantis integration for protocol treasury yield
-    \item Real Pear integration for trade execution
-    \item Real Salt integration for Robo Manager automated execution
+    \item Real LI.FI integration for cross-chain routing
+    \item Real Valantis integration for liquid staking yield
+    \item Real Pear integration for pair trading
+    \item Real Salt integration for treasury coordination via Robo Managers
     \item Real Insilico integration for trade ledger API
     \item Real oracle integration for live price feeds
     \item Polished frontend with visual novel aesthetic

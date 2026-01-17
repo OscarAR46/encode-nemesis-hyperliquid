@@ -1,0 +1,63 @@
+@font-face {
+  font-family: 'Quicksand';
+  src: url('/fonts/Quicksand/Quicksand-VariableFont_wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cinzel';
+  src: url('/fonts/Cinzel/Cinzel-VariableFont_wght.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg-dark: #0a1628;
+  --bg-mid: #0d2847;
+  --bg-water: #1a4a7a;
+  --bg-light: #2060a0;
+  --panel-bg: rgba(15, 35, 60, 0.92);
+  --panel-border: rgba(100, 180, 255, 0.25);
+  --panel-border-hover: rgba(100, 180, 255, 0.5);
+  --text-bright: #e8f0ff;
+  --text-mid: rgba(180, 210, 240, 0.85);
+  --text-dim: rgba(140, 170, 200, 0.6);
+  --accent-blue: #5b9fcf;
+  --accent-cyan: #60c0d0;
+  --yes-color: #60c080;
+  --yes-dark: #408060;
+  --no-color: #c06070;
+  --no-dark: #904050;
+  --lobby-color: #7090c0;
+  --lobby-dark: #506090;
+  --duel-color: #a070c0;
+  --duel-dark: #705090;
+  --gold: #d4a855;
+  --font: 'Quicksand', 'Segoe UI', sans-serif;
+  --font-title: 'Cinzel', serif;
+  --radius: 4px;
+  --radius-lg: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-bright);
+  background: var(--bg-dark);
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.scene { position: absolute; inset: 0; transition: opacity 0.8s ease; }
+.scene.hidden { opacity: 0; pointer-events: none; }

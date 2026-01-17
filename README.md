@@ -12,7 +12,7 @@
 ![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial-red)
 ![Hyperliquid](https://img.shields.io/badge/Chain-HyperEVM-00D395)
 
-<img src="docs/screenshot.png" alt="Nemesis Interface" width="800">
+<img src="documentation/screenshot.png" alt="Nemesis Interface" width="800">
 
 *Visual novel-inspired battle trading interface for the Hyperliquid London Community Hackathon 2026*
 
@@ -21,12 +21,6 @@
 ---
 
 ## Quick Start
-
-```bash
-git clone https://github.com/your-org/nemesis.git
-cd nemesis
-cp .env.template .env
-```
 
 ### Development
 
@@ -73,17 +67,17 @@ Three files handle all server modes:
 
 | File | Purpose | Invoked By |
 |------|---------|------------|
-| `serve.dev.ts` | Development server with hot module reload, source maps, verbose logging | `nix run .#dev` |
-| `serve.prod.ts` | Production server compiled to single binary | `nix run .#build`, `nix run .#ship` |
-| `serve.shared.ts` | Shared configuration to deduplicate common functionality, routes, middleware | Both |
+| `serve.dev.ts` | Development server with hot module reload of CSS (and only CSS, purposefully), source maps, verbose logging optionality | `nix run .#dev` |
+| `serve.prod.ts` | Production server compiled to single binary executable for Arch Linux architecture VPS | `nix run .#build`, `nix run .#ship` |
+| `serve.shared.ts` | Shared configuration to deduplicate common functionality, routes, middleware, miscellaneous | Both |
 
 ### Why This Structure
 
-**Single binary in dev**: `nix run .#dev` compiles and runs a single binary, identical to production. What you test locally is what ships.
+**Single binary in dev**: `nix run .#dev` compiles and runs a single binary, identical to production. This allows what you test locally to be uniform with what eventually ships and reduce testing requirements.
 
-**Reproducible builds**: Nix ensures every developer and CI system builds the exact same artifact. No "works on my machine."
+**Reproducible builds**: Nix ensures every developer and CI system builds the exact same artifact. No "works on my machine" issues. Full compatibility with any machine running nix (Windows (WSL), MacOS, Linux)
 
-**No intermediate steps**: Clone → `nix run .#dev` → working. No `npm install`, no `bun install`, no setup scripts.
+**No intermediate steps**: Clone → `nix run .#dev` → working. No `npm install`, no `bun install`, no setup scripts. Flake incorporates bun install. Lock files can be deleted for updated versions of software but repository will always run without fail thanks to pinning of software package versioning.
 
 ### Environment Variables
 
@@ -104,11 +98,12 @@ Required variables are documented in `.env.template`. The template is committed;
 | DOM | morphdom |
 | Wallet | viem + @wagmi/core |
 | Mobile | WalletConnect v2 |
-| Bridge | @lifi/sdk |
-| Trading | Pear REST API |
-| MPC | Salt SDK |
-| Yield | Valantis stHYPE |
-| Oracle | HyperCore |
+| Cross-Chain Routing | @lifi/sdk |
+| Pair Trading | Pear Protocol API |
+| Treasury Coordination | salt-sdk |
+| Liquid Staking | Valantis stHYPE |
+| Price Feeds | HyperCore Oracle |
+| Trade Ledger | Hyperliquid Info API |
 
 ---
 
@@ -116,23 +111,21 @@ Required variables are documented in `.env.template`. The template is committed;
 
 | Document | Description |
 |----------|-------------|
-| [Whitepaper](docs/nemesis-whitepaper.pdf) | Product vision, architecture, hackathon scope |
-| [Technical Spec](docs/NEMESIS_HACKATHON_predictionmarket.html) | Implementation details, track integrations |
+| [Whitepaper](documentation/nemesis-whitepaper.pdf) | Product vision, architecture, hackathon scope |
 
 ---
 
 ## Hackathon Tracks
 
-This submission targets four sponsor tracks simultaneously:
+This submission targets five sponsor tracks simultaneously:
 
-| Track | Sponsor | Prize Pool | Integration |
-|-------|---------|------------|-------------|
-| Cross-Chain Onboarding | LI.FI | $6,000 | Bridge from any chain to HyperEVM |
-| Yield Generation | Valantis | $2,000 | stHYPE liquid staking |
-| Trade Execution | Pear Protocol | $3,500 | Perpetual position management |
-| MPC Accounts | Salt | $1,000 | Policy-controlled trading guilds |
-
----
+| Track | Sponsor | Integration |
+|-------|---------|-------------|
+| Cross-Chain Onboarding | LI.FI | Multi-chain routing to swap and bridge into HyperEVM |
+| Liquid Staking | Valantis | stHYPE liquid staking for protocol treasury yield |
+| Pair Trading | Pear Protocol | Non-custodial pair and basket trading via Execution API |
+| Treasury Coordination | Salt | Self-custodial policy-controlled Robo Managers for trading guilds |
+| Trade Ledger API | Insilico | Trade history, position tracking, P&L, leaderboards |
 
 ---
 
@@ -142,6 +135,7 @@ This submission targets four sponsor tracks simultaneously:
 |---------|----------|-----|
 | HyperEVM Mainnet | 999 | `https://rpc.hyperliquid.xyz/evm` |
 | HyperEVM Testnet | 998 | `https://rpc.hyperliquid-testnet.xyz/evm` |
+| Arbitrum (Salt Orchestration) | 42161 | `https://arb1.arbitrum.io/rpc` |
 
 ---
 
