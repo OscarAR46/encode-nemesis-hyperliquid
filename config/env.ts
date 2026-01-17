@@ -12,8 +12,6 @@ export interface EnvConfig {
 }
 
 function getEnvVar(key: string, fallback?: string): string {
-  // Bun exposes env via process.env at build time
-  // For browser, we inject these at build or use defaults
   const value = typeof process !== 'undefined' 
     ? process.env[key] 
     : undefined
@@ -35,7 +33,7 @@ export const env: EnvConfig = {
   walletConnectProjectId: getEnvVar('WALLETCONNECT_PROJECT_ID', '848ad5c914224aacbe89ad4679dbf193'),
   hyperEvmRpcUrl: getEnvVar('HYPEREVM_RPC_URL', 'https://rpc.hyperliquid.xyz/evm'),
   hyperEvmTestnetRpcUrl: getEnvVar('HYPEREVM_TESTNET_RPC_URL', 'https://rpc.hyperliquid-testnet.xyz/evm'),
-  defaultChainId: parseInt(getEnvVar('DEFAULT_CHAIN_ID', '998'), 10), // Testnet by default for dev
+  defaultChainId: parseInt(getEnvVar('DEFAULT_CHAIN_ID', '998'), 10),
   isDev: getEnvVar('NODE_ENV', 'development') === 'development',
 }
 

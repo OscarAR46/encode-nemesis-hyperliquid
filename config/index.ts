@@ -1,11 +1,11 @@
 export { env } from './env'
-export { 
-  hyperEvmMainnet, 
-  hyperEvmTestnet, 
+export {
+  hyperEvmMainnet,
+  hyperEvmTestnet,
   supportedChains,
   getChainById,
   isChainSupported,
   getDefaultChain,
-  type SupportedChainId 
+  type SupportedChainId
 } from './chains'
 export { wagmiConfig, type WagmiConfig } from './wagmi'

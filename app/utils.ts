@@ -1,5 +1,5 @@
-import { state } from './state'
-import type { Market } from './types'
+import { state } from '@app/state'
+import type { Market } from '@app/types'
 
 export function randomFrom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]

@@ -135,7 +135,6 @@ class EventEmitter {
 class PriceFeedProbe {
   private lastUpdateTime = 0
   private updateHistory: number[] = []
-  private expectedIntervalMs = 500
 
   recordUpdate(timestamp: number) {
     this.lastUpdateTime = timestamp
@@ -176,11 +175,7 @@ class PriceFeedProbe {
       status,
       lastUpdate: this.lastUpdateTime,
       message,
-      metadata: {
-        gap,
-        jitter,
-        updateCount: this.updateHistory.length,
-      },
+      metadata: { gap, jitter, updateCount: this.updateHistory.length },
     }
   }
 
@@ -330,9 +325,7 @@ class HealthProbe {
         lastUpdate: this.lastCheckTime,
         latency,
         message,
-        metadata: {
-          response: this.lastResponse,
-        },
+        metadata: { response: this.lastResponse },
       }
     } catch (error) {
       this.consecutiveFailures++
@@ -343,9 +336,7 @@ class HealthProbe {
         status: 'failing',
         lastUpdate: this.lastCheckTime,
         message: error instanceof Error ? error.message : 'Failed',
-        metadata: {
-          consecutiveFailures: this.consecutiveFailures,
-        },
+        metadata: { consecutiveFailures: this.consecutiveFailures },
       }
     }
   }
@@ -356,7 +347,6 @@ class HealthProbe {
     const sorted = [...this.latencyHistory].sort((a, b) => a - b)
     const mean = this.latencyHistory.reduce((a, b) => a + b, 0) / this.latencyHistory.length
     const median = sorted[Math.floor(sorted.length / 2)]
-
     const trend = this.calculateTrend()
 
     return {
@@ -385,7 +375,7 @@ class HealthProbe {
     const sumXX = x.reduce((sum, xi) => sum + xi * xi, 0)
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX)
-    const ratePerMinute = slope * (60000 / 30000) // Convert to ms per minute
+    const ratePerMinute = slope * (60000 / 30000)
 
     let direction: TrendDirection = 'stable'
     if (ratePerMinute > 5) direction = 'degrading'
@@ -468,15 +458,6 @@ class AnomalyDetector {
     const baselineMean = baseline.reduce((a, b) => a + b, 0) / baseline.length
     const current = recent[recent.length - 1]
     return current > baselineMean * 3 && recent.slice(0, -1).every(v => v < baselineMean * 2)
-  }
-
-  detectDegradation(latencyHistory: number[]): boolean {
-    if (latencyHistory.length < 10) return false
-    const firstHalf = latencyHistory.slice(0, 5)
-    const secondHalf = latencyHistory.slice(-5)
-    const firstMean = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-    const secondMean = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
-    return secondMean > firstMean * 1.5
   }
 
   detectOscillation(stateHistory: ConnectionState[]): boolean {
@@ -566,9 +547,6 @@ class ConnectionMonitor extends EventEmitter {
     this.runHealthChecks()
 
     this.healthCheckInterval = window.setInterval(() => {
-      const interval = this.browserProbe.visible
-        ? this.settings.healthCheckIntervalMs
-        : this.settings.healthCheckBackgroundIntervalMs
       this.runHealthChecks()
     }, this.settings.healthCheckIntervalMs)
   }
@@ -682,7 +660,6 @@ class ConnectionMonitor extends EventEmitter {
 
     if (serverStats) {
       const latencyHistory = [serverStats.current]
-
       if (this.anomalyDetector.detectSpike(latencyHistory)) {
         this.emitAnomaly('spike', { probe: 'serverHealth', latency: serverStats.current })
       }

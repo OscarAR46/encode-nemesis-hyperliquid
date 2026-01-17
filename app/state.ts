@@ -1,4 +1,4 @@
-import type { AppState } from './types'
+import type { AppState } from '@app/types'
 
 export const state: AppState = {
   scene: 'selection',
@@ -6,7 +6,6 @@ export const state: AppState = {
   introComplete: false,
   introStarted: false,
   
-  // Wallet state
   connected: false,
   address: '',
   chainId: null,
@@ -96,10 +95,6 @@ function createParticles(): string {
   return html
 }
 
-/**
- * Update wallet state from wallet manager
- * Called by wallet change subscription
- */
 export function updateWalletState(walletState: {
   connected: boolean
   address: string | null
@@ -113,8 +108,12 @@ export function updateWalletState(walletState: {
   state.isConnecting = walletState.isConnecting
   state.connectorName = walletState.connector
   
-  // Clear error on successful connection
   if (walletState.connected) {
     state.walletError = null
   }
+}
+
+// Expose state to dev console for debugging (must be AFTER state is declared!)
+if (typeof window !== 'undefined') {
+  (window as any).__nemesisState = state
 }

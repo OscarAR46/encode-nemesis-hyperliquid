@@ -1,8 +1,8 @@
 import morphdom from 'morphdom'
-import { state } from './state'
-import { ICONS } from './icons'
-import { formatTime, formatUSD, formatCompact, truncAddr, getMarket, getTotalPnl } from './utils'
-import { connectionMonitor } from './connection'
+import { state } from '@app/state'
+import { ICONS } from '@app/icons'
+import { formatTime, formatUSD, formatCompact, truncAddr, getMarket, getTotalPnl } from '@app/utils'
+import { connectionMonitor } from '@app/connection'
 
 export function render() {
   const app = document.getElementById('app')
@@ -185,9 +185,6 @@ function renderMainInterface(): string {
   `
 }
 
-/**
- * Render wallet button with different states
- */
 function renderWalletButton(): string {
   if (state.isConnecting) {
     return `

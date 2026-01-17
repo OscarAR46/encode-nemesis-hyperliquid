@@ -1,11 +1,11 @@
-import { state, initData, updateWalletState } from './state'
-import { render } from './render'
-import { setupDelegatedEvents } from './events'
-import { showRandomDialogue } from './signal'
-import { connectionMonitor } from './connection'
-import { initFromStorage, saveUserData } from './storage'
-import { initWallet, onAccountChange } from './wallet'
-import type { ConnectionState, AnomalyPattern } from './connection'
+import { state, initData, updateWalletState } from '@app/state'
+import { render } from '@app/render'
+import { setupDelegatedEvents } from '@app/events'
+import { showRandomDialogue } from '@app/signal'
+import { connectionMonitor } from '@app/connection'
+import { initFromStorage, saveUserData } from '@app/storage'
+import { initWallet, onAccountChange } from '@app/wallet'
+import type { ConnectionState, AnomalyPattern } from '@app/connection'
 
 function initConnectionMonitor() {
   connectionMonitor.init()
@@ -70,26 +70,19 @@ function initConnectionMonitor() {
   })
 }
 
-/**
- * Initialize wallet connection and watch for changes
- */
 async function initWalletConnection() {
   try {
-    // Check for existing connection (from localStorage)
     const walletState = await initWallet()
     
     if (walletState.connected) {
-      // Restore wallet state
       updateWalletState(walletState)
       console.log('[Wallet] Restored session:', walletState.address?.slice(0, 10) + '...')
     }
     
-    // Watch for account changes (user switches wallet, disconnects, etc.)
     onAccountChange((newState) => {
       updateWalletState(newState)
       render()
       
-      // Show dialogue on disconnect if we were connected
       if (!newState.connected && state.connected) {
         setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
       }
@@ -106,7 +99,6 @@ async function init() {
   initConnectionMonitor()
   setupDelegatedEvents()
 
-  // Set initial scene based on returning status
   if (isReturning) {
     state.scene = 'selection'
   } else {
@@ -115,12 +107,10 @@ async function init() {
 
   render()
 
-  // Initialize wallet (async, won't block render)
   initWalletConnection()
 
-  // Save user data periodically and on page unload
   window.addEventListener('beforeunload', saveUserData)
-  setInterval(saveUserData, 30000) // Save every 30 seconds
+  setInterval(saveUserData, 30000)
 
   console.log('NEMESIS initialized')
   console.log('Every trader needs a Nemesis.')

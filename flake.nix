@@ -23,8 +23,14 @@
         dev = {
           type = "app";
           program = toString (pkgs.writeShellScript "nemesis-dev" ''
-            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install
-            ${pkgs.bun}/bin/bun --hot serve.dev.ts
+            # Install dependencies silently (frozen first, fallback to regular)
+            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install >/dev/null 2>&1
+            
+            # Pass through DEBUG environment variable
+            export DEBUG="''${DEBUG:-}"
+            
+            # Run dev server with hot reload
+            exec ${pkgs.bun}/bin/bun --hot serve.dev.ts
           '');
         };
 
@@ -32,7 +38,10 @@
           type = "app";
           program = toString (pkgs.writeShellScript "nemesis-build" ''
             set -e
-            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install
+            
+            # Install dependencies silently
+            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install >/dev/null 2>&1
+            
             START=$(date +%s.%N)
 
             mkdir -p dist
@@ -61,7 +70,10 @@
           type = "app";
           program = toString (pkgs.writeShellScript "nemesis-ship" ''
             set -e
-            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install
+            
+            # Install dependencies silently
+            ${pkgs.bun}/bin/bun install --frozen-lockfile >/dev/null 2>&1 || ${pkgs.bun}/bin/bun install >/dev/null 2>&1
+            
             BUILD_START=$(date +%s.%N)
 
             mkdir -p dist

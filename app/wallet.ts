@@ -14,7 +14,7 @@ import {
   getConnectors,
 } from '@wagmi/core'
 import type { Connector } from '@wagmi/core'
-import { wagmiConfig, isChainSupported, getDefaultChain, type SupportedChainId } from '../config'
+import { wagmiConfig, isChainSupported, getDefaultChain, type SupportedChainId } from '@config/index'
 
 /**
  * Wallet error types for typed error handling
@@ -97,10 +97,8 @@ export function getErrorMessage(error: WalletError): string {
  */
 export async function initWallet(): Promise<WalletState> {
   try {
-    // Attempt to reconnect to persisted session
     await reconnect(wagmiConfig)
   } catch (e) {
-    // Reconnect can fail silently - that's fine
     console.debug('[Wallet] No persisted session to reconnect')
   }
   
@@ -143,14 +141,11 @@ export async function connectWallet(preferredConnector?: Connector): Promise<Con
   try {
     const connectors = getConnectors(wagmiConfig)
     
-    // Determine which connector to use
     let connector: Connector | undefined = preferredConnector
     
     if (!connector) {
-      // Check for injected wallet first (desktop)
       const injected = connectors.find(c => c.id === 'injected')
       
-      // If injected wallet is available and ready, use it
       if (injected) {
         try {
           const provider = await injected.getProvider()
@@ -162,12 +157,10 @@ export async function connectWallet(preferredConnector?: Connector): Promise<Con
         }
       }
       
-      // Fall back to WalletConnect (mobile QR)
       if (!connector) {
         connector = connectors.find(c => c.id === 'walletConnect')
       }
       
-      // Last resort: any available connector
       if (!connector) {
         connector = connectors[0]
       }
@@ -177,23 +170,18 @@ export async function connectWallet(preferredConnector?: Connector): Promise<Con
       throw new WalletError('CONNECTOR_NOT_FOUND', 'No wallet connector available')
     }
     
-    // Execute connection
     const result = await connect(wagmiConfig, { connector })
     
-    // Check if connected to supported chain
     const chainId = result.chainId
     if (!isChainSupported(chainId)) {
-      // Attempt to switch to default chain
       try {
         const defaultChain = getDefaultChain()
         await switchChain(wagmiConfig, { chainId: defaultChain.id })
       } catch (switchError) {
-        // If switch fails, still return connection but warn
         console.warn('[Wallet] Connected to unsupported chain:', chainId)
       }
     }
     
-    // Get final state after potential chain switch
     const finalAccount = getAccount(wagmiConfig)
     
     return {
@@ -213,7 +201,7 @@ export async function disconnectWallet(): Promise<void> {
   const account = getAccount(wagmiConfig)
   
   if (!account.isConnected) {
-    return // Already disconnected, no-op
+    return
   }
   
   try {

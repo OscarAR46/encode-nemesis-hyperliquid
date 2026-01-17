@@ -1,10 +1,10 @@
-import { state } from './state'
-import { render } from './render'
-import { playCRTOn, playCRTOff, playTypeSound } from './audio'
-import { randomFrom } from './utils'
-import { DIALOGUE } from './dialogue'
-import { saveUserData } from './storage'
-import type { Emotion, DialogueLine } from './types'
+import { state } from '@app/state'
+import { render } from '@app/render'
+import { playCRTOn, playCRTOff, playTypeSound } from '@app/audio'
+import { randomFrom } from '@app/utils'
+import { DIALOGUE } from '@app/dialogue'
+import { saveUserData } from '@app/storage'
+import type { Emotion, DialogueLine } from '@app/types'
 
 export const CRT_ANIMATION_MS = 300
 export const AUTOPLAY_DELAY_MS = 4000
@@ -197,7 +197,6 @@ function startAutoplayTimer() {
     autoplayTimer = null
     if (state.autoplayEnabled && state.dialoguePlayState === 'playing' && state.introComplete) {
       if (state.dialogueSignal === 'connected' && state.dialogueAtEnd) {
-        // Always show generic idle dialogue for continuous autoplay
         showRandomDialogue('idle')
       }
     }
