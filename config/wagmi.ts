@@ -3,7 +3,7 @@
  */
 
 import { createConfig, http } from '@wagmi/core'
-import { injected, walletConnect, coinbaseWallet } from '@wagmi/connectors'
+import { injected, metaMask, walletConnect, coinbaseWallet } from '@wagmi/connectors'
 import { hyperEvmMainnet, hyperEvmTestnet } from './chains'
 import { env } from './env'
 
@@ -15,6 +15,11 @@ const walletConnectMetadata = {
 }
 
 const connectors = [
+  // MetaMask specific connector - uses extension popup
+  metaMask({
+    dappMetadata: walletConnectMetadata,
+  }),
+  // Generic injected for other browser wallets
   injected({
     shimDisconnect: true,
   }),

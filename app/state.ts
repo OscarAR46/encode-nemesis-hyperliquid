@@ -1,4 +1,13 @@
-import type { AppState } from '@app/types'
+import type { AppState, LayoutConfig } from '@app/types'
+
+export const DEFAULT_LAYOUT: LayoutConfig = {
+  version: 2,
+  widgets: [
+    { id: 'market', column: 0, order: 0, visible: true },
+    { id: 'order', column: 0, order: 1, visible: true },
+    { id: 'positions', column: 1, order: 0, visible: true },
+  ],
+}
 
 export const state: AppState = {
   scene: 'selection',
@@ -59,6 +68,13 @@ export const state: AppState = {
   orderBook: null,
   showOrderBook: false,
   orderBookCoin: 'BTC',
+
+  // Layout customization
+  editMode: false,
+  layoutConfig: structuredClone(DEFAULT_LAYOUT),
+
+  // Wallet session lost modal
+  showWalletSessionModal: false,
 }
 
 export function initData() {

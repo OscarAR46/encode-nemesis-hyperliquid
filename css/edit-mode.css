@@ -1,0 +1,264 @@
+/* ===========================================
+   EDIT MODE STYLES
+   Styling for widget customization mode
+   =========================================== */
+
+/* Edit mode toggle button */
+.edit-layout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-mid);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-layout-btn:hover {
+  background: rgba(100, 180, 255, 0.1);
+  border-color: var(--panel-border-hover);
+  color: var(--text-bright);
+}
+
+.edit-layout-btn.active {
+  background: rgba(100, 180, 255, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.edit-layout-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Reset layout button */
+.reset-layout-btn {
+  padding: 6px 10px;
+  background: rgba(192, 96, 112, 0.1);
+  border: 1px solid rgba(192, 96, 112, 0.3);
+  border-radius: var(--radius);
+  color: var(--no-color);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-layout-btn:hover {
+  background: rgba(192, 96, 112, 0.2);
+  border-color: var(--no-color);
+}
+
+/* Edit mode container */
+.panels-container.edit-mode {
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.panels-container.edit-mode::before {
+  content: 'Drag panels between columns • Click Done when finished';
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, rgba(100, 180, 255, 0.12), rgba(96, 192, 208, 0.08));
+  border: 1px solid rgba(100, 180, 255, 0.25);
+  border-radius: var(--radius);
+  color: var(--accent-cyan);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* Edit mode column styling */
+.panels-container.edit-mode .widget-column {
+  background: rgba(100, 180, 255, 0.03);
+  border: 1px dashed rgba(100, 180, 255, 0.15);
+  border-radius: var(--radius);
+  padding: 8px;
+  min-height: 120px;
+}
+
+.panels-container.edit-mode .widget-column:empty::after {
+  content: 'Drop here';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border: 2px dashed rgba(100, 180, 255, 0.3);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Edit mode panel styling - entire panel is draggable */
+.panels-container.edit-mode .panel {
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  border: 2px dashed var(--panel-border);
+}
+
+.panels-container.edit-mode .panel:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 1px var(--accent-cyan), 0 4px 16px rgba(96, 192, 208, 0.2);
+}
+
+/* Panel header in edit mode - visual drag indicator */
+.panels-container.edit-mode .panel-head {
+  cursor: grab;
+  position: relative;
+  background: rgba(100, 180, 255, 0.12);
+}
+
+.panels-container.edit-mode .panel-head::before {
+  content: '⋮⋮';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-cyan);
+  font-size: 14px;
+  letter-spacing: 3px;
+  opacity: 0.8;
+}
+
+.panels-container.edit-mode .panel-title {
+  margin-left: 20px;
+}
+
+/* Hide chevron toggle in edit mode */
+.panels-container.edit-mode .panel-toggle {
+  opacity: 0.3;
+}
+
+/* Panel body in edit mode - slightly dimmed */
+.panels-container.edit-mode .panel-body {
+  opacity: 0.7;
+}
+
+/* Sortable ghost (placeholder where item will drop) */
+.widget-ghost {
+  opacity: 0.4;
+  background: rgba(100, 180, 255, 0.2) !important;
+  border: 2px dashed var(--accent-cyan) !important;
+}
+
+.widget-ghost .panel-body {
+  display: none;
+}
+
+/* Sortable chosen (item being picked up) */
+.widget-chosen {
+  z-index: 100;
+}
+
+/* Sortable dragging state (item being dragged) */
+.widget-dragging {
+  cursor: grabbing !important;
+  opacity: 0.9;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--accent-cyan);
+  z-index: 101;
+}
+
+.widget-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Body class during drag */
+body.dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* Widget move buttons (for mobile/accessibility) */
+.widget-edit-controls {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.panels-container.edit-mode .widget-edit-controls {
+  display: flex;
+}
+
+.widget-move-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(100, 180, 255, 0.1);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.widget-move-btn:hover:not(.disabled) {
+  background: rgba(100, 180, 255, 0.2);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.widget-move-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.widget-move-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Up arrow - rotate chevron */
+.widget-move-btn[data-action="move-up"] svg {
+  transform: rotate(180deg);
+}
+
+/* Down arrow - chevron as-is */
+.widget-move-btn[data-action="move-down"] svg {
+  transform: rotate(0deg);
+}
+
+/* Edit mode header bar */
+.edit-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: rgba(100, 180, 255, 0.1);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+}
+
+.edit-mode-bar-text {
+  font-size: 11px;
+  color: var(--text-mid);
+}
+
+.edit-mode-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Header edit mode actions */
+.edit-mode-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

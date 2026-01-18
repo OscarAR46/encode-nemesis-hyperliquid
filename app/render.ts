@@ -3,6 +3,7 @@ import { state } from '@app/state'
 import { ICONS } from '@app/icons'
 import { formatTime, formatUSD, formatCompact, truncAddr, getMarket, getTotalPnl } from '@app/utils'
 import { connectionMonitor } from '@app/connection'
+import { renderColumnWidgets } from '@app/widgets'
 
 export function render() {
   const app = document.getElementById('app')
@@ -23,7 +24,12 @@ export function render() {
   morphdom(app, `<div id="app">${html}</div>`, {
     childrenOnly: true,
     onBeforeElUpdated: (fromEl: HTMLElement, toEl: HTMLElement) => {
+      // Don't update focused inputs
       if (fromEl === document.activeElement && (fromEl.tagName === 'INPUT' || fromEl.tagName === 'TEXTAREA')) {
+        return false
+      }
+      // Don't update panels or columns during edit mode - Sortable.js is managing them
+      if (state.editMode && (fromEl.classList?.contains('panel') || fromEl.classList?.contains('widget-column'))) {
         return false
       }
       return true
@@ -34,6 +40,20 @@ export function render() {
 }
 
 function renderSelectionScreen(): string {
+  const walletSessionModal = state.showWalletSessionModal ? `
+    <div class="wallet-session-overlay">
+      <div class="wallet-session-modal">
+        <div class="wallet-session-icon">${ICONS.wallet}</div>
+        <div class="wallet-session-title">Wallet Not Found</div>
+        <div class="wallet-session-message">Your previous session wallet was not detected.</div>
+        <div class="wallet-session-prompt">Please connect your wallet to continue.</div>
+        <div class="wallet-session-loader">
+          <div class="wallet-session-bar"></div>
+        </div>
+      </div>
+    </div>
+  ` : ''
+
   return `
     <div class="scene" id="selection-scene">
       <div class="bg-layer"></div>
@@ -58,6 +78,7 @@ function renderSelectionScreen(): string {
           </button>
         </div>
       </div>
+      ${walletSessionModal}
     </div>
   `
 }
@@ -143,6 +164,7 @@ function renderMainInterface(): string {
               <div class="stat"><div class="stat-label">24h Volume</div><div class="stat-value">$2.84M</div></div>
               <div class="stat"><div class="stat-label">Your P&L</div><div class="stat-value ${pnl >= 0 ? 'up' : 'down'}">${pnl >= 0 ? '+' : ''}${formatUSD(pnl)}</div></div>
             </div>
+            ${state.nav === 'trade' ? renderEditLayoutButton() : ''}
             ${renderWalletButton()}
           </div>
         </header>
@@ -219,6 +241,27 @@ function renderLivePricesTicker(): string {
   `
 }
 
+function renderEditLayoutButton(): string {
+  if (state.editMode) {
+    return `
+      <div class="edit-mode-actions">
+        <button class="reset-layout-btn" id="reset-layout-btn">Reset</button>
+        <button class="edit-layout-btn active" id="edit-layout-btn">
+          ${ICONS.check}
+          <span>Done</span>
+        </button>
+      </div>
+    `
+  }
+
+  return `
+    <button class="edit-layout-btn" id="edit-layout-btn">
+      ${ICONS.settings}
+      <span>Edit</span>
+    </button>
+  `
+}
+
 function renderWalletButton(): string {
   if (state.isConnecting) {
     return `
@@ -247,88 +290,16 @@ function renderWalletButton(): string {
 }
 
 function renderTradeContent(): string {
-  const m = getMarket()
-  const timeLeft = m.expiry - Date.now()
-  const price = state.orderTab === 'no' ? m.noPrice : m.yesPrice
-  const payout = state.stake / price
-  const profit = payout - state.stake
-  const isLobby = state.orderTab === 'lobby'
-  const isDuel = state.orderTab === 'duel'
-  const openCount = state.positions.filter(p => p.status === 'open').length
-  const orderCount = state.orders.filter(o => o.status === 'pending').length
-
-  let posContent = ''
-  if (state.posTab === 'positions') {
-    const open = state.positions.filter(p => p.status === 'open')
-    posContent = open.length === 0 ? '<div class="empty">No open positions</div>' :
-      open.map(p => `<div class="pos-item" data-id="${p.id}"><div class="pos-header"><span class="pos-market">${p.market}</span><span class="pos-side ${p.side}">${p.side.toUpperCase()}</span></div><div class="pos-details"><span>${formatUSD(p.size)} @ ${(p.entry * 100).toFixed(0)}¢</span><span class="pos-pnl ${p.pnl >= 0 ? 'up' : 'down'}">${p.pnl >= 0 ? '+' : ''}${formatUSD(p.pnl)}</span></div><button class="pos-close" data-id="${p.id}">Close Position</button></div>`).join('')
-  } else if (state.posTab === 'orders') {
-    const pending = state.orders.filter(o => o.status === 'pending')
-    posContent = pending.length === 0 ? '<div class="empty">No pending orders</div>' :
-      pending.map(o => `<div class="pos-item"><div class="pos-header"><span class="pos-market">${o.market}</span><span class="pos-side ${o.side}">${o.side.toUpperCase()}</span></div><div class="pos-details"><span>${formatUSD(o.size)} @ ${(o.price * 100).toFixed(0)}¢</span><span>Pending</span></div></div>`).join('')
-  } else {
-    posContent = state.history.length === 0 ? '<div class="empty">No trade history</div>' :
-      state.history.map(h => `<div class="pos-item"><div class="pos-header"><span class="pos-market">${h.market}</span><span class="pos-side ${h.side}">${h.side.toUpperCase()}</span></div><div class="pos-details"><span>${formatUSD(h.size)}</span><span class="pos-pnl ${h.pnl >= 0 ? 'up' : 'down'}">${h.pnl >= 0 ? '+' : ''}${formatUSD(h.pnl)}</span></div></div>`).join('')
-  }
-
   return `
-    <div class="panels-container">
-      <div class="panel ${state.panelStates.market ? '' : 'collapsed'}">
-        <div class="panel-head" data-panel="market"><span class="panel-title">Market</span><span class="panel-toggle">${ICONS.chevron}</span></div>
-        <div class="panel-body">
-          <button class="market-btn" id="market-btn">
-            <div class="market-asset">${m.asset}</div>
-            <div class="market-question">${m.question}</div>
-            <div class="market-prices"><span class="price-yes">${(m.yesPrice * 100).toFixed(0)}¢ YES</span><span class="price-no">${(m.noPrice * 100).toFixed(0)}¢ NO</span></div>
-            <div class="market-meta">${formatTime(timeLeft)} remaining · Vol: ${formatCompact(m.volume)}</div>
-          </button>
-        </div>
+    <div class="panels-container${state.editMode ? ' edit-mode' : ''}" id="widget-grid">
+      <div class="widget-column" data-column="0">
+        ${renderColumnWidgets(0)}
       </div>
-      <div class="panel ${state.panelStates.order ? '' : 'collapsed'}">
-        <div class="panel-head" data-panel="order"><span class="panel-title">Place Order</span><span class="panel-toggle">${ICONS.chevron}</span></div>
-        <div class="panel-body">
-          <div class="order-tabs">
-            <button class="order-tab yes ${state.orderTab === 'yes' ? 'active' : ''}" data-tab="yes">${ICONS.check} YES</button>
-            <button class="order-tab no ${state.orderTab === 'no' ? 'active' : ''}" data-tab="no">${ICONS.cross} NO</button>
-            <button class="order-tab lobby ${state.orderTab === 'lobby' ? 'active' : ''}" data-tab="lobby">${ICONS.lobby} Lobby</button>
-            <button class="order-tab duel ${state.orderTab === 'duel' ? 'active' : ''}" data-tab="duel">${ICONS.swords} 1v1</button>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Stake Amount</label>
-            <div class="form-input-wrap"><input type="number" class="form-input" id="stake-input" value="${state.stake}" min="1" step="10"><span class="form-suffix">USDC</span></div>
-            <input type="range" class="stake-slider" id="stake-slider" min="10" max="1000" step="10" value="${state.stake}">
-          </div>
-          ${(isLobby || isDuel) ? `<div class="form-group"><label class="form-label">${isLobby ? 'Invite Friend (Address/ENS)' : 'Challenge Rival (Address/ENS)'}</label><div class="form-input-wrap"><input type="text" class="form-input" id="target-input" placeholder="0x... or name.eth" value="${state.targetAddress}"></div></div>` : ''}
-          <div class="order-summary">
-            <div class="summary-row"><span class="label">Price</span><span class="value">${(price * 100).toFixed(0)}¢</span></div>
-            <div class="summary-row"><span class="label">Shares</span><span class="value">${payout.toFixed(2)}</span></div>
-            <div class="summary-row"><span class="label">Potential Profit</span><span class="value profit">+${formatUSD(profit)}</span></div>
-          </div>
-          <button class="order-btn ${state.orderTab}" id="order-btn" ${state.processing ? 'disabled' : ''}>${state.processing ? 'Processing...' : getOrderButtonText()}</button>
-        </div>
-      </div>
-      <div class="panel ${state.panelStates.positions ? '' : 'collapsed'}">
-        <div class="panel-head" data-panel="positions"><span class="panel-title">Positions</span><span class="panel-toggle">${ICONS.chevron}</span></div>
-        <div class="panel-body">
-          <div class="pos-tabs">
-            <button class="pos-tab ${state.posTab === 'positions' ? 'active' : ''}" data-tab="positions">Open <span class="cnt">${openCount}</span></button>
-            <button class="pos-tab ${state.posTab === 'orders' ? 'active' : ''}" data-tab="orders">Orders <span class="cnt">${orderCount}</span></button>
-            <button class="pos-tab ${state.posTab === 'history' ? 'active' : ''}" data-tab="history">History</button>
-          </div>
-          <div class="pos-list">${posContent}</div>
-        </div>
+      <div class="widget-column" data-column="1">
+        ${renderColumnWidgets(1)}
       </div>
     </div>
   `
-}
-
-function getOrderButtonText(): string {
-  switch (state.orderTab) {
-    case 'yes': return 'BUY YES'
-    case 'no': return 'BUY NO'
-    case 'lobby': return 'CREATE LOBBY'
-    case 'duel': return 'SEND CHALLENGE'
-  }
 }
 
 function renderFeedPage(): string {

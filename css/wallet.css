@@ -170,3 +170,205 @@
     height: 10px;
   }
 }
+
+/* ===========================================
+   WALLET SESSION LOST MODAL
+   Large overlay modal for returning players
+   =========================================== */
+
+.wallet-session-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 15, 30, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: wallet-overlay-fade-in 0.3s ease;
+}
+
+@keyframes wallet-overlay-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Closing animation - smooth fade out */
+.wallet-session-overlay.closing {
+  animation: wallet-overlay-fade-out 0.5s ease forwards;
+}
+
+.wallet-session-overlay.closing .wallet-session-modal {
+  animation: wallet-modal-fade-out 0.4s ease forwards;
+}
+
+@keyframes wallet-overlay-fade-out {
+  from {
+    opacity: 1;
+    backdrop-filter: blur(8px);
+  }
+  to {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+}
+
+@keyframes wallet-modal-fade-out {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.95) translateY(-10px);
+    opacity: 0;
+  }
+}
+
+.wallet-session-modal {
+  background: linear-gradient(180deg, rgba(20, 40, 70, 0.95) 0%, rgba(15, 30, 55, 0.98) 100%);
+  border: 2px solid rgba(100, 180, 255, 0.4);
+  border-radius: 16px;
+  padding: 48px 64px;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  box-shadow:
+    0 0 60px rgba(100, 180, 255, 0.2),
+    0 0 120px rgba(60, 140, 200, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: wallet-modal-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes wallet-modal-pop {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.wallet-session-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(100, 180, 255, 0.2) 0%, rgba(60, 140, 200, 0.1) 100%);
+  border: 1px solid rgba(100, 180, 255, 0.3);
+  border-radius: 50%;
+  animation: wallet-icon-pulse 2s ease-in-out infinite;
+}
+
+.wallet-session-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--accent-cyan);
+}
+
+@keyframes wallet-icon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(100, 180, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(100, 180, 255, 0.5);
+  }
+}
+
+.wallet-session-title {
+  font-family: var(--font);
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+  text-shadow: 0 0 20px rgba(100, 180, 255, 0.5);
+}
+
+.wallet-session-message {
+  font-family: var(--font);
+  font-size: 16px;
+  color: rgba(180, 200, 230, 0.9);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.wallet-session-prompt {
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.wallet-session-loader {
+  width: 100%;
+  height: 4px;
+  background: rgba(100, 180, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.wallet-session-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+  border-radius: 2px;
+  animation: wallet-bar-fill 3s linear forwards;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+@keyframes wallet-bar-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Pulse effect when bar completes */
+.wallet-session-overlay.closing .wallet-session-bar {
+  animation: none;
+  width: 100%;
+}
+
+/* Responsive for mobile */
+@media (max-width: 600px) {
+  .wallet-session-modal {
+    padding: 32px 24px;
+    margin: 16px;
+  }
+
+  .wallet-session-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+
+  .wallet-session-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .wallet-session-title {
+    font-size: 22px;
+  }
+
+  .wallet-session-message {
+    font-size: 14px;
+  }
+
+  .wallet-session-prompt {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+}
