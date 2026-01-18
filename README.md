@@ -4,10 +4,15 @@ Insilico Track Submission
 
 ## Quick Start
 
+
+```bash
+curl -s "https://nemesis.london/v1/health" | jq
+```
+Or run the dev server.
+
 ```bash
 nix run .#dev
 ```
-
 ```bash
 curl "http://localhost:3000/v1/health"
 curl "http://localhost:3000/v1/trades?user=0x..."
