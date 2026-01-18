@@ -1,226 +1,122 @@
-<div align="center">
+# Hyperliquid Trade Ledger API
 
-# NEMESIS
-
-*Every trader needs a Nemesis.*
-
-**[nemesis.london](https://nemesis.london)**
-
-![Nix](https://img.shields.io/badge/Nix-Flakes-5277C3?logo=nixos&logoColor=white)
-![Bun](https://img.shields.io/badge/Bun-1.0+-000000?logo=bun&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial-red)
-![Hyperliquid](https://img.shields.io/badge/Chain-HyperEVM-00D395)
-
-<img src="documentation/screenshot.png" alt="Nemesis Interface" width="800">
-
-*Visual novel-inspired battle trading interface for the Hyperliquid London Community Hackathon 2026*
-
-</div>
-
----
+Insilico Track Submission
 
 ## Quick Start
-
-### Development
 
 ```bash
 nix run .#dev
 ```
 
-With debug logging:
-
 ```bash
-DEBUG=1 nix run .#dev
+curl "http://localhost:3000/v1/health"
+curl "http://localhost:3000/v1/trades?user=0x..."
 ```
 
-### Build
+## Endpoints
 
-```bash
-nix run .#build
-```
+### GET /v1/trades
 
-### Deploy
+| Param | Required | Description |
+|-------|----------|-------------|
+| `user` | ✓ | Wallet address |
+| `coin` | | Filter by symbol |
+| `fromMs` | | Start timestamp |
+| `toMs` | | End timestamp |
+| `builderOnly` | | Filter by TARGET_BUILDER |
 
-```bash
-nix run .#ship
-```
+Returns: `timeMs, coin, side, px, sz, fee, closedPnl, builder`
 
----
+### GET /v1/positions/history
 
-## How It Works
+| Param | Required | Description |
+|-------|----------|-------------|
+| `user` | ✓ | Wallet address |
+| `coin` | | Filter by symbol |
+| `fromMs` | | Start timestamp |
+| `toMs` | | End timestamp |
+| `builderOnly` | | Mark tainted positions |
 
-The entire workflow is driven by `flake.nix`. There are no npm scripts, no separate build tools, no configuration drift between environments.
+Returns: `timeMs, netSize, avgEntryPx, tainted, liqPx, marginUsed`
 
-### The Nix Flake
+### GET /v1/pnl
 
-```
-flake.nix
-├── .#dev     → serve.dev.ts    → Development server with HMR
-├── .#build   → serve.prod.ts   → Single binary production build
-└── .#ship    → serve.prod.ts   → Deploy to production
-```
+| Param | Required | Description |
+|-------|----------|-------------|
+| `user` | ✓ | Wallet address |
+| `coin` | | Filter by symbol |
+| `fromMs` | | Start timestamp |
+| `toMs` | | End timestamp |
+| `builderOnly` | | Filter trades |
+| `maxStartCapital` | | Cap for returnPct |
 
-### The Bun Serve Trifecta
+Returns: `realizedPnl, returnPct, feesPaid, tradeCount, tainted`
 
-Three files handle all server modes:
+Calculation: `returnPct = realizedPnl / min(equityAtFromMs, maxStartCapital) * 100`
 
-| File | Purpose | Invoked By |
-|------|---------|------------|
-| `serve.dev.ts` | Development server with hot module reload of CSS (and only CSS, purposefully), source maps, verbose logging optionality | `nix run .#dev` |
-| `serve.prod.ts` | Production server compiled to single binary executable for Arch Linux architecture VPS | `nix run .#build`, `nix run .#ship` |
-| `serve.shared.ts` | Shared configuration to deduplicate common functionality, routes, middleware, miscellaneous | Both |
+### GET /v1/leaderboard
 
-### Why This Structure
+| Param | Required | Description |
+|-------|----------|-------------|
+| `metric` | ✓ | `volume`, `pnl`, or `returnPct` |
+| `coin` | | Filter by symbol |
+| `fromMs` | | Start timestamp |
+| `toMs` | | End timestamp |
+| `builderOnly` | | Default: true |
+| `maxStartCapital` | | Cap for returnPct |
+| `limit` | | Max entries |
 
-**Single binary in dev**: `nix run .#dev` compiles and runs a single binary, identical to production. This allows what you test locally to be uniform with what eventually ships and reduce testing requirements.
+Returns: `rank, user, metricValue, tradeCount, tainted`
 
-**Reproducible builds**: Nix ensures every developer and CI system builds the exact same artifact. No "works on my machine" issues. Full compatibility with any machine running nix (Windows (WSL), MacOS, Linux)
+### GET /v1/health
 
-**No intermediate steps**: Clone → `nix run .#dev` → working. No `npm install`, no `bun install`, no setup scripts. Flake incorporates bun install. Lock files can be deleted for updated versions of software but repository will always run without fail thanks to pinning of software package versioning.
+Returns datasource status and latency.
 
-### Environment Variables
+## Environment Variables
 
-```bash
-cp .env.template .env
-```
-
-Required variables are documented in `.env.template`. The template is committed; the actual `.env` is gitignored.
-
----
-
-## Project Structure
-
-```
-.
-├── app/                    # Core application modules
-│   ├── app.ts              # Main app initialization
-│   ├── audio.ts            # Sound effects & music
-│   ├── connection.ts       # WebSocket/RPC connections
-│   ├── dialogue.ts         # Visual novel dialogue system
-│   ├── events.ts           # Event handling
-│   ├── icons.ts            # Icon assets
-│   ├── render.ts           # DOM rendering (morphdom)
-│   ├── signal.ts           # Reactive state signals
-│   ├── state.ts            # Global state management
-│   ├── storage.ts          # Local storage persistence
-│   ├── types.ts            # TypeScript definitions
-│   ├── utils.ts            # Utility functions
-│   └── wallet.ts           # Wallet integration
-├── config/                 # Configuration modules
-│   ├── chains.ts           # Chain definitions
-│   ├── env.ts              # Environment variables
-│   ├── index.ts            # Config exports
-│   └── wagmi.ts            # Wagmi configuration
-├── css/                    # Stylesheets
-│   ├── avatar.css          # Character avatars
-│   ├── backgrounds.css     # Background images
-│   ├── base.css            # Base styles
-│   ├── connection.css      # Connection UI
-│   ├── crt.css             # CRT monitor effect
-│   ├── dialogue.css        # Dialogue boxes
-│   ├── header.css          # Header component
-│   ├── pages.css           # Page layouts
-│   ├── panels.css          # UI panels
-│   ├── responsive.css      # Mobile responsiveness
-│   ├── title.css           # Title screen
-│   └── utils.css           # Utility classes
-├── dist/                   # Build output
-├── documentation/          # Docs & assets
-│   ├── nemesis-whitepaper.pdf
-│   ├── nemesis-whitepaper.tex
-│   ├── pitchdeck/          # Pitch deck slides
-│   └── screenshot.png
-├── fonts/                  # Custom fonts
-│   ├── Cinzel/
-│   └── Quicksand/
-├── nemesis-chan/           # Character expressions
-│   ├── concerned.png
-│   ├── excited.png
-│   ├── happy.png
-│   ├── inquisitive.png
-│   ├── kawaii.png
-│   ├── loss.png
-│   ├── pleased.png
-│   ├── sly.png
-│   └── talkative.png
-├── app.ts                  # Entry point
-├── index.html              # HTML shell
-├── style.css               # Root stylesheet
-├── flake.nix               # Nix flake (build system)
-├── flake.lock              # Nix lock file
-├── package.json            # Dependencies
-├── tsconfig.json           # TypeScript config
-├── serve.dev.ts            # Dev server
-├── serve.prod.ts           # Prod server
-├── serve.shared.ts         # Shared server config
-└── sw.template.js          # Service worker template
-```
-
----
-
-## Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| Runtime | Bun |
-| Build | Nix Flakes |
-| DOM | morphdom |
-| Wallet | viem + @wagmi/core |
-| Mobile | WalletConnect v2 |
-| Cross-Chain Routing | @lifi/sdk |
-| Pair Trading | Pear Protocol API |
-| Treasury Coordination | salt-sdk |
-| Liquid Staking | Valantis stHYPE |
-| Price Feeds | HyperCore Oracle |
-| Trade Ledger | Hyperliquid Info API |
-
----
-
-## Documentation
-
-| Document | Description |
+| Variable | Description |
 |----------|-------------|
-| [Whitepaper](documentation/nemesis-whitepaper.pdf) | Product vision, architecture, hackathon scope |
+| `DATASOURCE_TYPE` | `hyperliquid` (implemented) or `insilico` (placeholder) |
+| `TARGET_BUILDER` | Builder address for filtering |
+| `TRACKED_USERS` | Comma-separated addresses for leaderboard |
 
----
+## Builder-Only Mode
 
-## Hackathon Tracks
+Set `TARGET_BUILDER=0x...` to filter trades by builder attribution.
 
-This submission targets five sponsor tracks simultaneously:
+Taint rules:
+- Position lifecycle: 0 → non-zero → 0
+- Tainted if lifecycle has both builder and non-builder trades
+- Tainted entries excluded from builder-only leaderboard
 
-| Track | Sponsor | Integration |
-|-------|---------|-------------|
-| Cross-Chain Onboarding | LI.FI | Multi-chain routing to swap and bridge into HyperEVM |
-| Liquid Staking | Valantis | stHYPE liquid staking for protocol treasury yield |
-| Pair Trading | Pear Protocol | Non-custodial pair and basket trading via Execution API |
-| Treasury Coordination | Salt | Self-custodial policy-controlled Robo Managers for trading guilds |
-| Trade Ledger API | Insilico | Trade history, position tracking, P&L, leaderboards |
+## Datasource Abstraction
 
----
+| Implementation | Status |
+|----------------|--------|
+| `HyperliquidDatasource` | Implemented |
+| `InsilicoDatasource` | Placeholder (API not yet available) |
 
-## Chain Configuration
+Swap via `DATASOURCE_TYPE` environment variable.
 
-| Network | Chain ID | RPC |
-|---------|----------|-----|
-| HyperEVM Mainnet | 999 | `https://rpc.hyperliquid.xyz/evm` |
-| HyperEVM Testnet | 998 | `https://rpc.hyperliquid-testnet.xyz/evm` |
-| Arbitrum (Salt Orchestration) | 42161 | `https://arb1.arbitrum.io/rpc` |
+## Limitations
 
----
+- Historical equity uses current account value (approximation)
+- Deposit tracking not implemented (no Hyperliquid API)
+- Risk fields (liqPx, marginUsed) only for current open positions
 
-## License
+## Spec Compliance
 
-Copyright © 2026 Oscar Allgrove-Ralph, Enzo Joly & ENZOJOLY Ltd.
-
-Licensed under [PolyForm Noncommercial 1.0.0](LICENSE). You may view, learn from, and use this software for noncommercial purposes. Commercial use requires explicit written permission.
-
----
-
-<div align="center">
-
-**[nemesis.london](https://nemesis.london)**
-
-*Built for the Hyperliquid London Community Hackathon 2026*
-
-</div>
+| Feature | Status |
+|---------|--------|
+| Trade history | ✓ |
+| Position reconstruction | ✓ |
+| P&L with capped normalization | ✓ |
+| Leaderboard (3 metrics) | ✓ |
+| Builder-only mode | ✓ |
+| Taint detection | ✓ |
+| Position flips | ✓ |
+| Partial closes | ✓ |
+| Multi-coin aggregation | ✓ |
+| Risk fields | ✓ |
+| Datasource abstraction | ✓ |
+| One-command run | ✓ |

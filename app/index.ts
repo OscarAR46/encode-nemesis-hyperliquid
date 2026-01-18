@@ -5,10 +5,19 @@ import { showRandomDialogue } from '@app/signal'
 import { connectionMonitor } from '@app/connection'
 import { initFromStorage, saveUserData } from '@app/storage'
 import { initWallet, onAccountChange } from '@app/wallet'
+import { initWebSocket } from '@app/websocket'
 import type { ConnectionState, AnomalyPattern } from '@app/connection'
 
 function initConnectionMonitor() {
-  connectionMonitor.init()
+  connectionMonitor.init({
+    healthCheckIntervalMs: 500,
+    serverTimeoutMs: 100,
+    staleFeedThresholdMs: 2000,
+    latencyWarningMs: 100,
+    latencyCriticalMs: 500,
+    failureThreshold: 1,
+    recoveryThreshold: 2,
+  })
 
   connectionMonitor.on('stateChange', (event: { previous: ConnectionState; current: ConnectionState }) => {
     const now = Date.now()
@@ -26,9 +35,7 @@ function initConnectionMonitor() {
 
     switch (event.current) {
       case 'DEGRADED':
-        if (event.previous === 'CONNECTED') {
-          showRandomDialogue('connectionDegraded')
-        }
+        if (event.previous === 'CONNECTED') showRandomDialogue('connectionDegraded')
         break
       case 'UNSTABLE':
         showRandomDialogue('connectionUnstable')
@@ -37,9 +44,7 @@ function initConnectionMonitor() {
         showRandomDialogue('connectionLost')
         break
       case 'CONNECTED':
-        if (event.previous !== 'CONNECTED') {
-          showRandomDialogue('connectionRestored')
-        }
+        if (event.previous !== 'CONNECTED') showRandomDialogue('connectionRestored')
         break
     }
 
@@ -64,9 +69,7 @@ function initConnectionMonitor() {
   })
 
   connectionMonitor.on('probeUpdate', () => {
-    if (state.showDiagnosticPanel) {
-      render()
-    }
+    if (state.showDiagnosticPanel) render()
   })
 }
 
@@ -76,18 +79,16 @@ async function initWalletConnection() {
     
     if (walletState.connected) {
       updateWalletState(walletState)
-      console.log('[Wallet] Restored session:', walletState.address?.slice(0, 10) + '...')
+      console.log('[Wallet] Restored:', walletState.address?.slice(0, 10) + '...')
     }
     
     onAccountChange((newState) => {
       updateWalletState(newState)
       render()
-      
       if (!newState.connected && state.connected) {
         setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
       }
     })
-    
   } catch (error) {
     console.error('[Wallet] Init failed:', error)
   }
@@ -97,14 +98,10 @@ async function init() {
   const isReturning = initFromStorage()
   initData()
   initConnectionMonitor()
+  initWebSocket()
   setupDelegatedEvents()
 
-  if (isReturning) {
-    state.scene = 'selection'
-  } else {
-    state.scene = 'title'
-  }
-
+  state.scene = isReturning ? 'selection' : 'title'
   render()
 
   initWalletConnection()
@@ -112,11 +109,7 @@ async function init() {
   window.addEventListener('beforeunload', saveUserData)
   setInterval(saveUserData, 30000)
 
-  console.log('NEMESIS initialized')
-  console.log('Every trader needs a Nemesis.')
-  if (isReturning) {
-    console.log('Welcome back, trader.')
-  }
+  console.log('[Nemesis] Ready.', isReturning ? 'Welcome back.' : '')
 }
 
 init()
