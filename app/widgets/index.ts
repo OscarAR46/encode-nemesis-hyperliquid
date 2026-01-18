@@ -2,6 +2,7 @@ import type { WidgetId, WidgetColumn } from '@app/types'
 import { renderMarketWidget } from '@app/widgets/market'
 import { renderOrderWidget } from '@app/widgets/order'
 import { renderPositionsWidget } from '@app/widgets/positions'
+import { renderBridgeWidget } from '@app/widgets/bridge'
 import { getVisibleWidgetsSorted, getWidgetsByColumn } from '@app/widgets/base'
 
 // Widget render function registry
@@ -9,6 +10,7 @@ const widgetRenderers: Record<WidgetId, () => string> = {
   market: renderMarketWidget,
   order: renderOrderWidget,
   positions: renderPositionsWidget,
+  bridge: renderBridgeWidget,
 }
 
 /**

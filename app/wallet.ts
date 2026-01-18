@@ -92,6 +92,30 @@ export function getErrorMessage(error: WalletError): string {
 }
 
 /**
+ * Clear stale WalletConnect sessions from localStorage
+ */
+function clearStaleWalletConnectSessions(): void {
+  if (typeof window === 'undefined') return
+
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && (
+      key.startsWith('wc@') ||
+      key.startsWith('wagmi') ||
+      key.includes('walletconnect')
+    )) {
+      keysToRemove.push(key)
+    }
+  }
+
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key)
+    console.debug('[Wallet] Cleared stale session:', key)
+  })
+}
+
+/**
  * Initialize wallet - check for existing connection
  * Call this on app startup
  */
@@ -99,9 +123,17 @@ export async function initWallet(): Promise<WalletState> {
   try {
     await reconnect(wagmiConfig)
   } catch (e) {
-    console.debug('[Wallet] No persisted session to reconnect')
+    const errorMessage = e instanceof Error ? e.message : String(e)
+
+    // Handle stale WalletConnect sessions
+    if (errorMessage.includes('session topic') || errorMessage.includes('No matching key')) {
+      console.warn('[Wallet] Stale WalletConnect session detected, clearing...')
+      clearStaleWalletConnectSessions()
+    } else {
+      console.debug('[Wallet] No persisted session to reconnect:', errorMessage)
+    }
   }
-  
+
   return getWalletState()
 }
 

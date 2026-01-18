@@ -1,4 +1,4 @@
-import { state, DEFAULT_LAYOUT } from '@app/state'
+import { state, DEFAULT_LAYOUT, DEFAULT_BRIDGE_STATE } from '@app/state'
 import { render } from '@app/render'
 import { playSound } from '@app/audio'
 import { toast, getMarket, formatUSD } from '@app/utils'
@@ -24,9 +24,12 @@ import {
   WalletError,
   getErrorMessage,
 } from '@app/wallet'
-import type { NavTab, OrderTab, PosTab, AvatarMode, WidgetId } from '@app/types'
+import type { NavTab, OrderTab, PosTab, AvatarMode, WidgetId, SourceToken } from '@app/types'
 import { hyperliquidWS } from '@app/websocket'
 import { toggleEditMode, moveWidgetUp, moveWidgetDown, resetLayout, initDragDrop } from '@app/layout'
+import { SOURCE_CHAINS, COMMON_TOKENS } from '@config/chains'
+import { initLiFi, getQuote, executeBridge } from '@app/bridge'
+import { parseUnits, formatUnits } from 'viem'
 
 function openOrderBook(coin: string) {
   state.showOrderBook = true
@@ -313,6 +316,229 @@ function handleClosePosition(id: string) {
   toast('Position closed!', 'success')
   render()
   setTimeout(() => showRandomDialogue('closed'), 0)
+}
+
+// ============================================
+// Bridge Event Handlers (LI.FI Integration)
+// ============================================
+
+function handleBridgeChainSelect(chainId: number) {
+  state.bridge.sourceChainId = chainId
+  state.bridge.sourceToken = null  // Reset token when chain changes
+  state.bridge.quote = null
+  state.bridge.quoteError = null
+  state.showBridgePanel = false
+  playSound([500])
+  render()
+}
+
+function handleBridgeTokenSelect(token: SourceToken) {
+  state.bridge.sourceToken = token
+  state.bridge.quote = null
+  state.bridge.quoteError = null
+  playSound([500])
+  render()
+
+  // Auto-fetch quote if amount is already entered
+  if (state.bridge.amount && parseFloat(state.bridge.amount) > 0) {
+    handleBridgeGetQuote()
+  }
+}
+
+function handleBridgeAmountChange(amount: string) {
+  state.bridge.amount = amount
+  state.bridge.quote = null
+  state.bridge.quoteError = null
+  render()
+}
+
+function handleBridgeDestTokenSelect(token: string) {
+  state.bridge.destinationToken = token
+  state.bridge.quote = null
+  state.bridge.quoteError = null
+  playSound([500])
+  render()
+}
+
+function handleBridgeMaxClick() {
+  if (state.bridge.sourceToken?.balance) {
+    state.bridge.amount = state.bridge.sourceToken.balance
+    state.bridge.quote = null
+    render()
+    handleBridgeGetQuote()
+  }
+}
+
+async function handleBridgeGetQuote() {
+  const { bridge } = state
+
+  if (!bridge.sourceChainId || !bridge.sourceToken || !bridge.amount) {
+    return
+  }
+
+  const amount = parseFloat(bridge.amount)
+  if (isNaN(amount) || amount <= 0) {
+    state.bridge.quoteError = 'Enter a valid amount'
+    render()
+    return
+  }
+
+  if (!state.connected || !state.address) {
+    state.bridge.quoteError = 'Connect your wallet first'
+    render()
+    return
+  }
+
+  // Initialize LI.FI SDK
+  initLiFi()
+
+  state.bridge.isLoadingQuote = true
+  state.bridge.quoteError = null
+  state.bridge.quote = null
+  render()
+
+  try {
+    // Convert amount to wei
+    const fromAmount = parseUnits(bridge.amount, bridge.sourceToken.decimals).toString()
+
+    // Get destination token address (HYPE native or USDC)
+    const toToken = bridge.destinationToken === 'HYPE'
+      ? '0x0000000000000000000000000000000000000000'  // Native token
+      : '0x...'  // TODO: USDC address on HyperEVM
+
+    const quoteResult = await getQuote({
+      fromChainId: bridge.sourceChainId,
+      toChainId: 999,  // HyperEVM
+      fromToken: bridge.sourceToken.address,
+      toToken,
+      fromAmount,
+      fromAddress: state.address,
+    })
+
+    state.bridge.quote = {
+      fromAmount: quoteResult.fromAmount,
+      toAmount: formatUnits(BigInt(quoteResult.toAmount), 18),  // Assuming 18 decimals
+      toAmountMin: formatUnits(BigInt(quoteResult.toAmountMin), 18),
+      estimatedTime: quoteResult.estimatedTime,
+      gasCosts: quoteResult.gasCosts,
+      feeCosts: quoteResult.feeCosts,
+      steps: quoteResult.steps.map(s => ({
+        ...s,
+        status: 'pending' as const,
+      })),
+      route: quoteResult.route,
+    }
+
+    playSound([500, 600])
+    toast('Quote received!', 'success')
+
+  } catch (error: any) {
+    console.error('[Bridge] Quote failed:', error)
+    state.bridge.quoteError = error.message || 'Failed to get quote. Try again.'
+    playSound([300])
+  } finally {
+    state.bridge.isLoadingQuote = false
+    render()
+  }
+}
+
+async function handleBridgeExecute() {
+  const { bridge } = state
+
+  if (!bridge.quote || !bridge.quote.route) {
+    toast('Get a quote first', 'error')
+    return
+  }
+
+  if (!state.connected) {
+    toast('Connect your wallet first', 'error')
+    return
+  }
+
+  state.bridge.status = 'pending'
+  state.bridge.steps = bridge.quote.steps.map(s => ({ ...s, status: 'pending' as const }))
+  state.bridge.error = null
+  state.bridge.txHash = null
+  playSound([500, 600, 700])
+  render()
+
+  try {
+    const result = await executeBridge(bridge.quote.route, {
+      onStepUpdate: (step, index, total) => {
+        state.bridge.currentStepIndex = index
+        state.bridge.steps = state.bridge.steps.map((s, i) => ({
+          ...s,
+          status: i < index ? 'complete' : i === index ? 'active' : 'pending',
+        }))
+        render()
+      },
+      onTxHash: (txHash, chainId) => {
+        state.bridge.txHash = txHash
+        render()
+      },
+      onApprovalNeeded: () => {
+        state.bridge.status = 'approving'
+        render()
+      },
+      onApprovalComplete: () => {
+        state.bridge.status = 'pending'
+        render()
+      },
+      onBridgeStart: () => {
+        state.bridge.status = 'confirming'
+        render()
+      },
+      onBridgeComplete: (toAmount) => {
+        state.bridge.status = 'success'
+        state.bridge.finalAmount = toAmount
+        state.bridge.steps = state.bridge.steps.map(s => ({ ...s, status: 'complete' as const }))
+        playSound([523, 659, 784, 1047])
+        toast('Bridge complete!', 'success')
+        render()
+      },
+      onError: (error) => {
+        state.bridge.status = 'failed'
+        state.bridge.error = error.message
+        playSound([200, 150])
+        toast(error.message, 'error')
+        render()
+      },
+    })
+
+    if (result.success) {
+      state.bridge.status = 'success'
+      state.bridge.finalAmount = result.toAmount || bridge.quote.toAmount
+    }
+
+  } catch (error: any) {
+    console.error('[Bridge] Execution failed:', error)
+    state.bridge.status = 'failed'
+    state.bridge.error = error.message || 'Bridge failed. Please try again.'
+    playSound([200, 150])
+    toast(error.message || 'Bridge failed', 'error')
+  }
+
+  render()
+}
+
+function handleBridgeReset() {
+  state.bridge = structuredClone(DEFAULT_BRIDGE_STATE)
+  playSound([400, 500])
+  render()
+}
+
+function handleBridgeRetry() {
+  state.bridge.status = 'idle'
+  state.bridge.error = null
+  state.bridge.txHash = null
+  state.bridge.steps = []
+  render()
+  handleBridgeGetQuote()
+}
+
+function toggleBridgeChainDropdown() {
+  state.showBridgePanel = !state.showBridgePanel
+  render()
 }
 
 export function setupDelegatedEvents() {
@@ -686,6 +912,93 @@ export function setupDelegatedEvents() {
       }
       return
     }
+
+    // ============================================
+    // Bridge Event Handlers (LI.FI)
+    // ============================================
+
+    // Bridge connect wallet button
+    if (target.closest('#bridge-connect-btn')) {
+      handleWalletClick()
+      return
+    }
+
+    // Bridge chain dropdown toggle
+    if (target.closest('#bridge-chain-dropdown')) {
+      toggleBridgeChainDropdown()
+      return
+    }
+
+    // Bridge chain selection
+    const bridgeChainItem = target.closest('.bridge-dropdown-item[data-chain-id]') as HTMLElement | null
+    if (bridgeChainItem) {
+      const chainId = parseInt(bridgeChainItem.dataset.chainId || '0', 10)
+      if (chainId) {
+        handleBridgeChainSelect(chainId)
+      }
+      return
+    }
+
+    // Bridge token selection
+    const bridgeTokenItem = target.closest('.bridge-dropdown-item[data-token-address]') as HTMLElement | null
+    if (bridgeTokenItem) {
+      const token: SourceToken = {
+        address: bridgeTokenItem.dataset.tokenAddress || '',
+        symbol: bridgeTokenItem.dataset.tokenSymbol || '',
+        name: bridgeTokenItem.dataset.tokenName || '',
+        decimals: parseInt(bridgeTokenItem.dataset.tokenDecimals || '18', 10),
+        icon: bridgeTokenItem.dataset.tokenIcon || '',
+      }
+      handleBridgeTokenSelect(token)
+      return
+    }
+
+    // Bridge destination token buttons
+    const bridgeDestTokenBtn = target.closest('.bridge-dest-token-btn') as HTMLElement | null
+    if (bridgeDestTokenBtn) {
+      const token = bridgeDestTokenBtn.dataset.token
+      if (token) {
+        handleBridgeDestTokenSelect(token)
+      }
+      return
+    }
+
+    // Bridge max button
+    if (target.closest('#bridge-max-btn')) {
+      handleBridgeMaxClick()
+      return
+    }
+
+    // Bridge quote button
+    if (target.closest('#bridge-quote-btn')) {
+      handleBridgeGetQuote()
+      return
+    }
+
+    // Bridge execute button
+    if (target.closest('#bridge-execute-btn')) {
+      handleBridgeExecute()
+      return
+    }
+
+    // Bridge new/reset button
+    if (target.closest('#bridge-new-btn') || target.closest('#bridge-reset-btn')) {
+      handleBridgeReset()
+      return
+    }
+
+    // Bridge retry button
+    if (target.closest('#bridge-retry-btn')) {
+      handleBridgeRetry()
+      return
+    }
+
+    // Close dropdown when clicking outside
+    if (state.showBridgePanel && !target.closest('.bridge-chain-select')) {
+      state.showBridgePanel = false
+      render()
+      return
+    }
   })
 
   app.addEventListener('input', (e) => {
@@ -713,6 +1026,12 @@ export function setupDelegatedEvents() {
 
     if (target.id === 'target-input') {
       state.targetAddress = target.value
+      return
+    }
+
+    // Bridge amount input
+    if (target.id === 'bridge-amount-input') {
+      handleBridgeAmountChange(target.value)
       return
     }
   })

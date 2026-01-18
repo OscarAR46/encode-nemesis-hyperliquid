@@ -72,3 +72,41 @@ export function getWidgetsByColumn(column: WidgetColumn): WidgetPosition[] {
     .filter(w => w.visible && w.column === column)
     .sort((a, b) => a.order - b.order)
 }
+
+/**
+ * Panel options for wrapping content
+ */
+export interface PanelOptions {
+  icon?: string
+  collapsible?: boolean
+  collapsed?: boolean
+}
+
+/**
+ * Simple panel wrapper for widgets
+ * Creates a consistent panel structure with optional header icon
+ */
+export function wrapInPanel(
+  widgetId: WidgetId,
+  title: string,
+  content: string,
+  options?: PanelOptions
+): string {
+  const panelKey = widgetId as keyof typeof state.panelStates
+  const isCollapsed = options?.collapsed ?? !state.panelStates[panelKey]
+  const collapsedClass = isCollapsed ? ' collapsed' : ''
+
+  return `
+    <div class="panel${collapsedClass}" data-widget-id="${widgetId}">
+      <div class="panel-head" data-panel="${panelKey}">
+        ${options?.icon ? `<span class="panel-icon">${options.icon}</span>` : ''}
+        <span class="panel-title">${title}</span>
+        ${state.editMode ? renderEditControls(widgetId) : ''}
+        ${options?.collapsible !== false ? `<span class="panel-toggle">${ICONS.chevron}</span>` : ''}
+      </div>
+      <div class="panel-body">
+        ${content}
+      </div>
+    </div>
+  `
+}

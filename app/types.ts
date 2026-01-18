@@ -1,5 +1,5 @@
-export type Scene = 'title' | 'selection' | 'main'
-export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
+export type Scene = 'title' | 'selection' | 'main' | 'bridge'
+export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio' | 'bridge'
 export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
 export type PosTab = 'positions' | 'orders' | 'history'
 export type AvatarMode = 'full' | 'head' | 'off'
@@ -14,8 +14,70 @@ export type OrderStatus = 'pending' | 'filled' | 'cancelled'
 export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'
 
 // Widget system types
-export type WidgetId = 'market' | 'order' | 'positions'
+export type WidgetId = 'market' | 'order' | 'positions' | 'bridge'
 export type WidgetColumn = 0 | 1  // Left column = 0, Right column = 1
+
+// ============================================
+// Bridge Types (LI.FI Integration)
+// ============================================
+
+export type BridgeStatus = 'idle' | 'selecting' | 'quoting' | 'approving' | 'pending' | 'confirming' | 'success' | 'failed'
+
+export interface BridgeStep {
+  type: 'swap' | 'cross' | 'lifi' | 'approve'
+  tool: string
+  toolLogo?: string
+  fromChain: string
+  toChain: string
+  fromToken: string
+  toToken: string
+  status: 'pending' | 'active' | 'complete' | 'failed'
+}
+
+export interface BridgeQuote {
+  fromAmount: string
+  toAmount: string
+  toAmountMin: string
+  estimatedTime: number  // seconds
+  gasCosts: string
+  feeCosts: string
+  steps: BridgeStep[]
+  route: any  // LI.FI Route object
+}
+
+export interface SourceToken {
+  symbol: string
+  name: string
+  address: string
+  decimals: number
+  icon: string
+  balance?: string
+  balanceUsd?: string
+}
+
+export interface BridgeState {
+  // Selection
+  sourceChainId: number | null
+  sourceToken: SourceToken | null
+  amount: string
+  destinationToken: string  // On HyperEVM (HYPE or USDC)
+
+  // Quote
+  quote: BridgeQuote | null
+  isLoadingQuote: boolean
+  quoteError: string | null
+
+  // Execution
+  status: BridgeStatus
+  currentStepIndex: number
+  steps: BridgeStep[]
+  txHash: string | null
+  error: string | null
+
+  // Result
+  finalAmount: string | null
+  explorerLink: string | null
+}
 
 export interface DialogueLine {
   text: string
@@ -74,6 +136,7 @@ export interface PanelStates {
   market: boolean
   order: boolean
   positions: boolean
+  bridge: boolean
 }
 
 export interface OrderBookLevel {
@@ -175,4 +238,8 @@ export interface AppState {
 
   // Wallet session lost modal
   showWalletSessionModal: boolean
+
+  // Bridge state (LI.FI integration)
+  bridge: BridgeState
+  showBridgePanel: boolean
 }
