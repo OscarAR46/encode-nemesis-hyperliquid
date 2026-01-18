@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
   '/css/panels.css',
   '/css/pages.css',
   '/css/connection.css',
+  '/css/wallet.css',
   '/css/utils.css',
   '/css/responsive.css',
   '/icon.png',

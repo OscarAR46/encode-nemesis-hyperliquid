@@ -4,7 +4,17 @@ import { handleLedgerRoutes, handleCorsPreflightForLedger } from "./api/ledger"
 import swTemplate from "./sw.template.js" with { type: "text" }
 
 const DEBUG = process.env.DEBUG === "1"
-const DEV_BUILD_VERSION = `dev-${Date.now()}`
+
+/**
+ * CACHE_MODE controls service worker caching behavior:
+ * - "fresh"      : New cache version every server restart (default, always fresh code)
+ * - "persistent" : Same cache version across restarts (test caching behavior)
+ * - "disabled"   : No service worker (completely disable caching)
+ */
+const CACHE_MODE = (process.env.CACHE_MODE || "fresh") as "fresh" | "persistent" | "disabled"
+const DEV_BUILD_VERSION = CACHE_MODE === "fresh"
+  ? `dev-${Date.now()}`
+  : "dev-persistent-v1"
 
 function log(...args: unknown[]) {
   if (DEBUG) console.log("[DEBUG]", ...args)
@@ -589,6 +599,20 @@ async function handleRequest(request: Request): Promise<Response> {
   if (ledgerResponse) return ledgerResponse
 
   if (path === "/sw.js") {
+    // If caching is disabled, return a no-op service worker that skips caching
+    if (CACHE_MODE === "disabled") {
+      const noopSW = `
+// Service Worker disabled in dev mode (CACHE_MODE=disabled)
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', () => self.clients.claim());
+// No fetch handler = all requests go to network
+console.log('[SW] Disabled mode - no caching');
+`
+      return new Response(noopSW, {
+        headers: { "Content-Type": "application/javascript", "Cache-Control": "no-cache" },
+      })
+    }
+
     const sw = swTemplate.replace(/__CACHE_VERSION__/g, DEV_BUILD_VERSION)
     return new Response(sw, {
       headers: { "Content-Type": "application/javascript", "Cache-Control": "no-cache" },
@@ -621,6 +645,12 @@ async function handleRequest(request: Request): Promise<Response> {
 
 Bun.serve({ port, fetch: handleRequest, idleTimeout: 0 })
 
+const cacheModeDesc = {
+  fresh: "Fresh (new version each restart)",
+  persistent: "Persistent (same version)",
+  disabled: "Disabled (no caching)",
+}
+
 console.log(`
 
   NEMESIS [DEV]${DEBUG ? " - DEBUG MODE" : ""}
@@ -630,5 +660,8 @@ console.log(`
   • HMR: CSS hot reload
   • Source maps: Inline
   • Ledger API: /v1/*
-${DEBUG ? "  • Debug logging: Enabled                ║\n" : ""}
+  • Cache mode: ${cacheModeDesc[CACHE_MODE]}
+${DEBUG ? "  • Debug logging: Enabled\n" : ""}
+  Tip: Set CACHE_MODE=persistent to test caching
+       Set CACHE_MODE=disabled to bypass cache
 `)

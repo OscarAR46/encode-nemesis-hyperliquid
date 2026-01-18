@@ -54,6 +54,11 @@ export const state: AppState = {
   tabTutorialShown: { trade: false, feed: false, leaderboard: false, portfolio: false },
   prices: {},
   lastPriceUpdate: 0,
+
+  // Order book
+  orderBook: null,
+  showOrderBook: false,
+  orderBookCoin: 'BTC',
 }
 
 export function initData() {

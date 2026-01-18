@@ -8,15 +8,22 @@ import { initWallet, onAccountChange } from '@app/wallet'
 import { initWebSocket } from '@app/websocket'
 import type { ConnectionState, AnomalyPattern } from '@app/connection'
 
+function registerServiceWorker(): void {
+  if (!('serviceWorker' in navigator)) return
+  navigator.serviceWorker.register('/sw.js')
+    .then((reg) => console.log('[SW] Registered, scope:', reg.scope))
+    .catch((err) => console.warn('[SW] Registration failed:', err))
+}
+
 function initConnectionMonitor() {
   connectionMonitor.init({
     healthCheckIntervalMs: 500,
-    serverTimeoutMs: 100,
+    serverTimeoutMs: 500,  // Increased from 100ms - too aggressive, caused false failures
     staleFeedThresholdMs: 2000,
     latencyWarningMs: 100,
     latencyCriticalMs: 500,
     failureThreshold: 1,
-    recoveryThreshold: 2,
+    recoveryThreshold: 1,  // Match failure threshold for snappy state transitions
   })
 
   connectionMonitor.on('stateChange', (event: { previous: ConnectionState; current: ConnectionState }) => {
@@ -95,6 +102,7 @@ async function initWalletConnection() {
 }
 
 async function init() {
+  registerServiceWorker()  // Earliest possible - starts precaching all assets
   const isReturning = initFromStorage()
   initData()
   initConnectionMonitor()

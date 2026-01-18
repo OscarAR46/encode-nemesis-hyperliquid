@@ -144,7 +144,8 @@ class ServerHealthProbe {
     try {
       const ctrl = new AbortController()
       const t = setTimeout(() => ctrl.abort(), timeoutMs)
-      await fetch('/v1/health', { method: 'GET', signal: ctrl.signal, cache: 'no-store' })
+      // Use /health (local-only) not /v1/health (calls external API)
+      await fetch('/health', { method: 'GET', signal: ctrl.signal, cache: 'no-store' })
       clearTimeout(t)
       
       this.lastLatency = Date.now() - start
@@ -246,13 +247,18 @@ class ConnectionMonitor extends EventEmitter {
   private exchange = new ExchangeHealthProbe()
   private browser = new BrowserProbe()
   private events = new RingBuffer<ConnectionEvent>(500)
-  private currentState: ConnectionState = 'CONNECTED'
-  private currentConfidence: Confidence = 'HIGH'
+  private currentState: ConnectionState = 'DISCONNECTED'
+  private currentConfidence: Confidence = 'NONE'
   private downCount = 0
   private upCount = 0
   private serverInterval: number | null = null
   private exchangeInterval: number | null = null
   private initialized = false
+
+  // Race condition fix: track which probes have reported their first status
+  private initialProbesDone = new Set<string>()
+  private initializing = true
+  private static readonly ALL_PROBES = ['priceFeed', 'webSocket', 'serverHealth', 'exchangeHealth', 'browser']
 
   constructor() {
     super()
@@ -262,6 +268,11 @@ class ConnectionMonitor extends EventEmitter {
   init(settings?: Partial<ConnectionSettings>) {
     if (this.initialized) return
     if (settings) this.settings = { ...this.settings, ...settings }
+
+    // Browser probe is immediately available (synchronous)
+    this.markProbeReady('browser')
+    this.emit('probeUpdate', { probe: 'browser', report: this.browser.getReport() })
+
     this.startChecks()
     this.initialized = true
     this.log('state_change', { previous: null, current: this.currentState })
@@ -285,17 +296,39 @@ class ConnectionMonitor extends EventEmitter {
 
   private async checkServer() {
     const report = await this.server.check(this.settings.serverTimeoutMs)
+    this.markProbeReady('serverHealth')
     this.emit('probeUpdate', { probe: 'serverHealth', report })
     this.evaluate()
   }
 
   private async checkExchange() {
     const report = await this.exchange.check()
+    this.markProbeReady('exchangeHealth')
     this.emit('probeUpdate', { probe: 'exchangeHealth', report })
     this.evaluate()
   }
 
+  private markProbeReady(probeName: string) {
+    if (!this.initializing) return
+    this.initialProbesDone.add(probeName)
+
+    // Check if all probes have reported
+    const allReady = ConnectionMonitor.ALL_PROBES.every(p => this.initialProbesDone.has(p))
+    if (allReady) {
+      this.initializing = false
+      console.log('[Connection] All probes ready, evaluating initial state')
+      // Force immediate evaluation now that all probes have data
+      this.evaluate()
+    }
+  }
+
   private evaluate() {
+    // Race condition fix: don't compute overall state until all probes have reported
+    if (this.initializing) {
+      // Still emit probe updates for the diagnostic panel, but don't change overall state
+      return
+    }
+
     const reports = this.getAllProbeReports()
     let score = 0
     for (const r of reports) {
@@ -338,12 +371,14 @@ class ConnectionMonitor extends EventEmitter {
 
   recordPriceUpdate(ts: number) {
     this.priceFeed.recordUpdate(ts)
+    this.markProbeReady('priceFeed')
     this.emit('probeUpdate', { probe: 'priceFeed', report: this.priceFeed.getReport(this.settings) })
     this.evaluate()
   }
 
   recordWebSocketOpen() {
     this.webSocket.recordOpen()
+    this.markProbeReady('webSocket')
     this.log('reconnect', { success: true })
     this.emit('probeUpdate', { probe: 'webSocket', report: this.webSocket.getReport() })
     this.evaluate()
@@ -370,6 +405,12 @@ class ConnectionMonitor extends EventEmitter {
 
   getState(): ConnectionState { return this.currentState }
   getConfidence(): Confidence { return this.currentConfidence }
+  isInitializing(): boolean { return this.initializing }
+  getInitializationProgress(): { ready: string[]; pending: string[] } {
+    const ready = [...this.initialProbesDone]
+    const pending = ConnectionMonitor.ALL_PROBES.filter(p => !this.initialProbesDone.has(p))
+    return { ready, pending }
+  }
 
   getAllProbeReports(): ProbeReport[] {
     return [
