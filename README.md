@@ -72,6 +72,30 @@ Returns: `rank, user, metricValue, tradeCount, tainted`
 
 Returns datasource status and latency.
 
+## LI.FI Bridge Integration
+
+One-click onboarding to HyperEVM via cross-chain bridging.
+
+| Source Chains | Destination |
+|---------------|-------------|
+| Ethereum, Arbitrum, Base, Polygon, Optimism, Avalanche, BNB Chain | HyperEVM (chain 999) |
+
+Uses `@lifi/sdk` for swap + bridge in a single transaction flow. See `LIFI-INTEGRATION.md` for full implementation details.
+
+## Pear Protocol Battle Trading
+
+Competitive pair/basket trading arena via Pear Execution API.
+
+| Mode | Description |
+|------|-------------|
+| Solo | Standard pair trade (long/short) against the market |
+| 1v1 Duel | Challenge a rival—opposing pair trade positions |
+| 2v2 Team | Team-based narrative basket battles |
+| Battle Royale | Tournament mode with 4-8 participants |
+| Conditional | Trigger-based battles ("when BTC breaks $100K...") |
+
+Core insight: **trading battles ARE pair trades**. When you challenge someone, you're betting your asset outperforms theirs—settled as paired positions on Hyperliquid. See `PEAR_BATTLE_INTEGRATION.md` for full implementation details.
+
 ## Environment Variables
 
 | Variable | Description |
@@ -120,3 +144,5 @@ Swap via `DATASOURCE_TYPE` environment variable.
 | Risk fields | ✓ |
 | Datasource abstraction | ✓ |
 | One-command run | ✓ |
+| LI.FI bridge integration | ✓ |
+| Pear battle trading | ✓ |
