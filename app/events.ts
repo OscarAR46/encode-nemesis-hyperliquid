@@ -12,7 +12,8 @@ import {
   clearDismissTimer,
   togglePausePlay,
   skipDialogue,
-  toggleAutoplay
+  toggleAutoplay,
+  setAdvanceIntroCallback
 } from '@app/signal'
 import { INTRO_DIALOGUE, RETURNING_INTRO_DIALOGUE, DIALOGUE } from '@app/dialogue'
 import { saveUserData, clearUserData } from '@app/storage'
@@ -51,8 +52,11 @@ function registerServiceWorker(): void {
     .catch((err) => console.warn('[SW] Registration failed:', err))
 }
 
-function advanceIntro() {
-  if (state.isTyping) { skipTypewriter(); return }
+function advanceIntro(forceSkip = false) {
+  // If typing and not force skipping, just finish current text
+  if (state.isTyping && !forceSkip) { skipTypewriter(); return }
+
+  // If force skipping while typing, we still advance to next
   const introDialogue = getIntroDialogue()
   state.introIndex++
   if (state.introIndex >= introDialogue.length) {
@@ -139,34 +143,34 @@ function handlePortraitClick() {
 
 async function handleWalletClick() {
   if (state.isConnecting) return
-  
+
   if (!state.connected) {
     state.isConnecting = true
     state.walletError = null
     render()
-    
+
     try {
       const result = await connectWallet()
-      
+
       state.connected = true
       state.address = result.address
       state.chainId = result.chainId as (999 | 998)
       state.isConnecting = false
       state.connectorName = result.connector
       state.walletError = null
-      
+
       playSound([523, 659, 784])
       toast('Wallet connected!', 'success')
       render()
-      
+
       setTimeout(() => showRandomDialogue('walletConnected'), 100)
-      
+
     } catch (error) {
       state.isConnecting = false
-      
+
       if (error instanceof WalletError) {
         state.walletError = error.type
-        
+
         if (error.type !== 'USER_REJECTED') {
           toast(getErrorMessage(error), 'error')
         }
@@ -174,25 +178,25 @@ async function handleWalletClick() {
         state.walletError = 'UNKNOWN'
         toast('Connection failed. Please try again.', 'error')
       }
-      
+
       render()
     }
   } else {
     try {
       await disconnectWallet()
-      
+
       state.connected = false
       state.address = ''
       state.chainId = null
       state.connectorName = null
       state.walletError = null
-      
+
       playSound([400, 300])
       toast('Wallet disconnected')
       render()
-      
+
       setTimeout(() => showRandomDialogue('walletDisconnected'), 100)
-      
+
     } catch (error) {
       console.error('[Wallet] Disconnect failed:', error)
       state.connected = false
@@ -255,6 +259,13 @@ export function setupDelegatedEvents() {
   const app = document.getElementById('app')
   if (!app) return
 
+  // Set up callback for skip button to advance intro (forceSkip = true)
+  setAdvanceIntroCallback(() => {
+    if (state.scene === 'title' && state.introStarted && !state.introComplete) {
+      advanceIntro(true) // Force skip to next dialogue immediately
+    }
+  })
+
   app.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
 
@@ -262,7 +273,19 @@ export function setupDelegatedEvents() {
       if (target.closest('#btn-continue')) {
         state.scene = 'title'
         playSound([523, 659, 784])
+        registerServiceWorker()
         render()
+        // For returning users, automatically start the welcome back dialogue
+        setTimeout(() => {
+          state.introStarted = true
+          const introDialogue = getIntroDialogue()
+          const firstLine = introDialogue[0]
+          if (firstLine) {
+            connectSignal(() => {
+              showDialogue(firstLine)
+            })
+          }
+        }, 300)
         return
       }
       if (target.closest('#btn-new-game')) {
@@ -283,7 +306,35 @@ export function setupDelegatedEvents() {
       return
     }
 
-    if (state.scene === 'title' && target.closest('#title-scene')) {
+    // Dialogue control buttons - handle BEFORE scene-level click handlers
+    if (target.closest('#dialogue-pause-play')) {
+      e.stopPropagation()
+      togglePausePlay()
+      playSound([500])
+      return
+    }
+
+    if (target.closest('#dialogue-skip')) {
+      e.stopPropagation()
+      skipDialogue()
+      playSound([600])
+      return
+    }
+
+    if (target.closest('#dialogue-autoplay')) {
+      e.stopPropagation()
+      toggleAutoplay()
+      playSound([500])
+      return
+    }
+
+    // Handle "Enter Nemesis" button for first-time users
+    if (target.closest('#enter-btn')) {
+      handleTitleClick()
+      return
+    }
+
+    if (state.scene === 'title' && target.closest('#title-scene') && !target.closest('.dialogue-controls')) {
       handleTitleClick()
       return
     }
@@ -311,19 +362,23 @@ export function setupDelegatedEvents() {
       return
     }
 
-    const modeBtn = target.closest('.mode-btn') as HTMLElement | null
-    if (modeBtn) {
-      const mode = modeBtn.dataset.mode as AvatarMode
+    // Avatar mode buttons in dialogue controls
+    const avatarModeBtn = target.closest('.avatar-mode-btn') as HTMLElement | null
+    if (avatarModeBtn) {
+      e.stopPropagation() // Prevent dialogue box click
+      const mode = avatarModeBtn.dataset.mode as AvatarMode
       if (state.avatarMode !== mode) {
         const prevMode = state.avatarMode
         state.avatarMode = mode
         playSound([500])
         saveUserData()
 
+        // 'off' mode only hides dialogue, avatar stays visible
         if (mode === 'off' && prevMode !== 'off') {
           disconnectSignal()
         }
         else if (mode !== 'off' && prevMode === 'off') {
+          // Coming back from off mode - show dialogue again
           connectSignal(() => {
             showRandomDialogue('idle')
           })
@@ -357,33 +412,25 @@ export function setupDelegatedEvents() {
       return
     }
 
-    if (target.closest('#dialogue-pause-play')) {
-      e.stopPropagation()
-      togglePausePlay()
-      playSound([500])
-      return
-    }
-
-    if (target.closest('#dialogue-skip')) {
-      e.stopPropagation()
-      skipDialogue()
-      playSound([600])
-      return
-    }
-
-    if (target.closest('#dialogue-autoplay')) {
-      e.stopPropagation()
-      toggleAutoplay()
-      playSound([500])
-      return
-    }
-
     if (state.scene === 'main') {
       if (target.closest('#dialogue-box') && !target.closest('.dialogue-controls')) {
         handleDialogueClick()
         return
       }
-      if (target.closest('.avatar-area') && state.avatarMode === 'full') {
+      // Avatar click handling for all modes
+      if (target.closest('.avatar-area')) {
+        // In off mode, clicking avatar brings back dialogue
+        if (state.avatarMode === 'off') {
+          state.avatarMode = 'full' // Switch back to full mode
+          playSound([500])
+          saveUserData()
+          connectSignal(() => {
+            showRandomDialogue('idle')
+          })
+          render()
+          return
+        }
+        // In full or head mode, clicking avatar shows next dialogue
         handleDialogueClick()
         return
       }

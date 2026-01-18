@@ -2,7 +2,7 @@ import { state } from '@app/state'
 import type { NavTab, AvatarMode } from '@app/types'
 
 const STORAGE_KEY = 'nemesis_user_data'
-const STORAGE_VERSION = 1
+const STORAGE_VERSION = 2 // Bumped: 'small' -> 'head' avatar mode
 
 interface StoredData {
   version: number
@@ -12,6 +12,7 @@ interface StoredData {
   avatarMode: AvatarMode
   autoplayEnabled: boolean
   lastVisit: number
+  lastConnectedAddress?: string
 }
 
 function getDefaultData(): StoredData {
@@ -31,6 +32,15 @@ function getDefaultData(): StoredData {
   }
 }
 
+function migrateData(data: StoredData & { avatarMode?: string }): StoredData {
+  // Migrate v1 -> v2: 'small' becomes 'head'
+  if (data.avatarMode === 'small') {
+    data.avatarMode = 'head'
+  }
+  data.version = STORAGE_VERSION
+  return data as StoredData
+}
+
 export function loadUserData(): StoredData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -38,8 +48,9 @@ export function loadUserData(): StoredData {
 
     const data = JSON.parse(raw) as StoredData
 
-    if (data.version !== STORAGE_VERSION) {
-      return getDefaultData()
+    // Migrate older versions
+    if (data.version < STORAGE_VERSION) {
+      return migrateData(data)
     }
 
     return data
@@ -58,6 +69,7 @@ export function saveUserData(): void {
       avatarMode: state.avatarMode,
       autoplayEnabled: state.autoplayEnabled,
       lastVisit: Date.now(),
+      lastConnectedAddress: state.connected ? state.address : undefined,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   } catch {

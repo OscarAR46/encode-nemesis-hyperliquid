@@ -2,7 +2,7 @@ export type Scene = 'selection' | 'title' | 'main'
 export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
 export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
 export type PosTab = 'positions' | 'orders' | 'history'
-export type AvatarMode = 'full' | 'small' | 'off'
+export type AvatarMode = 'full' | 'head' | 'off'
 export type Emotion = 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'inquisitive' | 'talkative' | 'excited' | 'loss'
 export type DialogueSignal = 'off' | 'connecting' | 'connected' | 'disconnecting'
 export type DialoguePlayState = 'playing' | 'paused'
@@ -77,7 +77,7 @@ export interface AppState {
   introIndex: number
   introComplete: boolean
   introStarted: boolean
-  
+
   // Wallet state
   connected: boolean
   address: string
@@ -85,6 +85,8 @@ export interface AppState {
   isConnecting: boolean
   walletError: WalletErrorType | null
   connectorName: string | null
+  showWalletModal: boolean
+  selectedConnectorId: string | null
   
   balance: number
   nav: NavTab
@@ -116,6 +118,7 @@ export interface AppState {
   dialogueAtEnd: boolean
   dialoguePlayState: DialoguePlayState
   autoplayEnabled: boolean
+  autoplayKey: number
   connectionState: ConnectionState
   lastConnectionDialogue: number
   isReturningPlayer: boolean

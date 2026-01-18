@@ -12,6 +12,8 @@ export const state: AppState = {
   isConnecting: false,
   walletError: null,
   connectorName: null,
+  showWalletModal: false,
+  selectedConnectorId: null,
   
   balance: 1250.00,
   nav: 'trade',
@@ -43,6 +45,7 @@ export const state: AppState = {
   dialogueAtEnd: false,
   dialoguePlayState: 'playing',
   autoplayEnabled: false,
+  autoplayKey: 0,
   connectionState: 'CONNECTED',
   lastConnectionDialogue: 0,
   isReturningPlayer: false,

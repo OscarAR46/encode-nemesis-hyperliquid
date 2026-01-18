@@ -46,15 +46,15 @@ function renderSelectionScreen(): string {
         <div class="selection-message">Ah! I see you have dueled before~</div>
         <div class="selection-question">Would you like to continue?</div>
         <div class="selection-buttons">
-          <button class="selection-btn continue" id="btn-continue">
-            <span class="selection-btn-icon">${ICONS.play}</span>
-            <span class="selection-btn-text">Continue</span>
-            <span class="selection-btn-desc">Resume where you left off</span>
-          </button>
           <button class="selection-btn new-game" id="btn-new-game">
             <span class="selection-btn-icon">${ICONS.cross}</span>
             <span class="selection-btn-text">New Game</span>
             <span class="selection-btn-desc">Start fresh as a new trader</span>
+          </button>
+          <button class="selection-btn continue" id="btn-continue">
+            <span class="selection-btn-icon">${ICONS.play}</span>
+            <span class="selection-btn-text">Continue</span>
+            <span class="selection-btn-desc">Resume where you left off</span>
           </button>
         </div>
       </div>
@@ -63,6 +63,10 @@ function renderSelectionScreen(): string {
 }
 
 function renderTitleScreen(): string {
+  // For first-time users: show "Enter Nemesis" button
+  // For returning users who got here via selection: show "Click to begin"
+  const showEnterButton = !state.isReturningPlayer && !state.introStarted
+
   return `
     <div class="scene" id="title-scene">
       <div class="bg-layer"></div>
@@ -70,9 +74,14 @@ function renderTitleScreen(): string {
       <div class="bg-particles">${state.particlesHtml}</div>
       <div class="water-line"></div>
       <div class="title-screen">
-        <div class="title-logo">NEMESIS</div>
-        <div class="title-tagline">Every trader needs a Nemesis.</div>
-        <div class="title-start">— Click to begin —</div>
+        <div class="title-content">
+          <div class="title-logo">NEMESIS</div>
+          <div class="title-tagline">Every trader needs a Nemesis.</div>
+          ${showEnterButton
+            ? `<button class="enter-btn" id="enter-btn">${ICONS.play} Enter Nemesis</button>`
+            : `<div class="title-start">— Click to begin —</div>`
+          }
+        </div>
       </div>
       <div class="dialogue-container">
         <div class="dialogue-box signal-${state.dialogueSignal} ${state.autoplayEnabled && state.dialogueAtEnd && !state.isTyping ? 'autoplay-active' : ''}" id="dialogue-box">
@@ -90,7 +99,7 @@ function renderTitleScreen(): string {
             </button>
           </div>
           <div class="dialogue-continue">${state.autoplayEnabled ? '' : '▼'}</div>
-          <div class="dialogue-autoplay-bar"></div>
+          <div class="dialogue-autoplay-bar" data-key="${state.autoplayKey}"></div>
         </div>
         <div class="dialogue-orbital">
           <div class="orbital-ring orbital-ring-1"></div>
@@ -115,28 +124,26 @@ function renderMainInterface(): string {
       <div class="water-line"></div>
       <div class="main-interface">
         <header class="header">
-          <div class="logo">
-            <div class="logo-mark">${ICONS.logo}</div>
-            <span class="logo-text">NEMESIS</span>
-            <span class="logo-tagline">Every trader needs a Nemesis.</span>
+          <div class="header-left">
+            <div class="logo">
+              <div class="logo-mark">${ICONS.logo}</div>
+              <span class="logo-text">NEMESIS</span>
+              <span class="logo-tagline">Every trader needs a Nemesis.</span>
+            </div>
+            <nav class="nav">
+              <button class="nav-btn ${state.nav === 'trade' ? 'active' : ''}" data-nav="trade">Trade</button>
+              <button class="nav-btn ${state.nav === 'feed' ? 'active' : ''}" data-nav="feed">Feed</button>
+              <button class="nav-btn ${state.nav === 'leaderboard' ? 'active' : ''}" data-nav="leaderboard">Leaderboard</button>
+              <button class="nav-btn ${state.nav === 'portfolio' ? 'active' : ''}" data-nav="portfolio">Portfolio</button>
+            </nav>
           </div>
-          <nav class="nav">
-            <button class="nav-btn ${state.nav === 'trade' ? 'active' : ''}" data-nav="trade">Trade</button>
-            <button class="nav-btn ${state.nav === 'feed' ? 'active' : ''}" data-nav="feed">Feed</button>
-            <button class="nav-btn ${state.nav === 'leaderboard' ? 'active' : ''}" data-nav="leaderboard">Leaderboard</button>
-            <button class="nav-btn ${state.nav === 'portfolio' ? 'active' : ''}" data-nav="portfolio">Portfolio</button>
-          </nav>
-          <div class="header-spacer"></div>
-          <div class="header-stats">
-            <div class="stat"><div class="stat-label">24h Volume</div><div class="stat-value">$2.84M</div></div>
-            <div class="stat"><div class="stat-label">Your P&L</div><div class="stat-value ${pnl >= 0 ? 'up' : 'down'}">${pnl >= 0 ? '+' : ''}${formatUSD(pnl)}</div></div>
+          <div class="header-right">
+            <div class="header-stats">
+              <div class="stat"><div class="stat-label">24h Volume</div><div class="stat-value">$2.84M</div></div>
+              <div class="stat"><div class="stat-label">Your P&L</div><div class="stat-value ${pnl >= 0 ? 'up' : 'down'}">${pnl >= 0 ? '+' : ''}${formatUSD(pnl)}</div></div>
+            </div>
+            ${renderWalletButton()}
           </div>
-          <div class="mode-toggle">
-            <button class="mode-btn ${state.avatarMode === 'full' ? 'active' : ''}" data-mode="full">Full</button>
-            <button class="mode-btn ${state.avatarMode === 'small' ? 'active' : ''}" data-mode="small">Small</button>
-            <button class="mode-btn ${state.avatarMode === 'off' ? 'active' : ''}" data-mode="off">Off</button>
-          </div>
-          ${renderWalletButton()}
         </header>
         <div class="main-content">
           <div class="avatar-area mode-${state.avatarMode}">
@@ -152,7 +159,7 @@ function renderMainInterface(): string {
       </div>
       ${renderConnectionIndicator()}
       ${renderDiagnosticPanel()}
-      <div class="dialogue-container ${isOffMode ? 'off-mode' : ''}">
+      <div class="dialogue-container avatar-mode-${state.avatarMode}">
         <div class="dialogue-box signal-${state.dialogueSignal} ${state.autoplayEnabled && state.dialogueAtEnd && !state.isTyping ? 'autoplay-active' : ''}" id="dialogue-box">
           <div class="dialogue-name visible" id="dialogue-name">NEMESIS</div>
           <div class="dialogue-text" id="dialogue-text">${state.dialogueSignal === 'connected' ? state.currentDialogue : ''}</div>
@@ -166,11 +173,21 @@ function renderMainInterface(): string {
             <button class="dialogue-ctrl-btn ${state.autoplayEnabled ? 'active' : ''}" id="dialogue-autoplay" title="Autoplay ${state.autoplayEnabled ? 'On' : 'Off'}">
               ${ICONS.autoplay}
             </button>
+            <span class="dialogue-ctrl-divider"></span>
+            <button class="avatar-mode-btn ${state.avatarMode === 'full' ? 'active' : ''}" data-mode="full" title="Avatar Full">
+              ${ICONS.avatarFull}
+            </button>
+            <button class="avatar-mode-btn ${state.avatarMode === 'head' ? 'active' : ''}" data-mode="head" title="Avatar Head">
+              ${ICONS.avatarHead}
+            </button>
+            <button class="avatar-mode-btn off-btn ${state.avatarMode === 'off' ? 'active' : ''}" data-mode="off" title="Hide Chat">
+              ${ICONS.cross}
+            </button>
           </div>
           <div class="dialogue-continue">${state.autoplayEnabled ? '' : '▼'}</div>
-          <div class="dialogue-autoplay-bar"></div>
+          <div class="dialogue-autoplay-bar" data-key="${state.autoplayKey}"></div>
         </div>
-        <div class="dialogue-portrait ${state.avatarMode === 'small' || isOffMode ? 'visible' : ''}" id="dialogue-portrait">
+        <div class="dialogue-portrait" id="dialogue-portrait">
           <img id="portrait-img" src="nemesis-chan/${state.currentEmotion}.png" alt="">
         </div>
         <div class="dialogue-orbital">
@@ -190,22 +207,24 @@ function renderWalletButton(): string {
     return `
       <button class="wallet-btn connecting" id="wallet-btn" disabled>
         <span class="wallet-spinner"></span>
-        Connecting...
+        <span class="wallet-btn-text">Connecting...</span>
       </button>
     `
   }
-  
+
   if (state.connected) {
     return `
       <button class="wallet-btn connected" id="wallet-btn">
-        ${truncAddr(state.address)}
+        <span class="wallet-status-dot"></span>
+        <span class="wallet-btn-text">${truncAddr(state.address)}</span>
       </button>
     `
   }
-  
+
   return `
     <button class="wallet-btn" id="wallet-btn">
-      Connect Wallet
+      <span class="wallet-icon">${ICONS.wallet}</span>
+      <span class="wallet-btn-text">Connect Wallet</span>
     </button>
   `
 }
