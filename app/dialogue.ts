@@ -241,4 +241,96 @@ export const DIALOGUE = {
     { text: "So much volatility! Wicks everywhere...", emotion: 'inquisitive' as Emotion },
     { text: "Price is bouncing all over the place!", emotion: 'talkative' as Emotion },
   ],
+
+  // Battle dialogue - Pear Protocol integration
+  battleIntro: [
+    { text: "Welcome to the Battle Arena! This is where narratives clash~", emotion: 'excited' as Emotion },
+    { text: "Pick your thesis, stake your claim, and let the market decide the winner!", emotion: 'sly' as Emotion },
+    { text: "Ready to put your conviction to the test?", emotion: 'inquisitive' as Emotion },
+  ],
+  battleThemeSelected: [
+    { text: "Ooh, interesting choice~ I can see why you believe in that narrative!", emotion: 'pleased' as Emotion },
+    { text: "Bold thesis! Let's see if the market agrees~", emotion: 'sly' as Emotion },
+    { text: "A classic bet. I like your style!", emotion: 'happy' as Emotion },
+  ],
+  battleAiTheme: [
+    { text: "AI tokens? You're betting on the future~ Bold move!", emotion: 'excited' as Emotion },
+    { text: "The AI narrative is strong... but can it outperform?", emotion: 'inquisitive' as Emotion },
+  ],
+  battleMemeTheme: [
+    { text: "Memes!? You absolute degen. I love it~", emotion: 'sly' as Emotion },
+    { text: "The power of the internet... never underestimate it!", emotion: 'excited' as Emotion },
+  ],
+  battleHypeTheme: [
+    { text: "All in on HYPE!? Now THAT'S conviction!", emotion: 'excited' as Emotion },
+    { text: "Hyperliquid maxi detected~ Let's see if HYPE lives up to its name!", emotion: 'pleased' as Emotion },
+  ],
+  battleSoloMode: [
+    { text: "Solo pair trade~ Just you vs the market. Pure skill!", emotion: 'inquisitive' as Emotion },
+    { text: "No opponents, no excuses. Let your thesis speak for itself~", emotion: 'sly' as Emotion },
+  ],
+  battleDuelMode: [
+    { text: "1v1 challenge! This is where legends are made~", emotion: 'excited' as Emotion },
+    { text: "A direct duel... may the best narrative WIN!", emotion: 'sly' as Emotion },
+    { text: "Ooh, things are getting personal! I love a good rivalry~", emotion: 'happy' as Emotion },
+  ],
+  battleTeamMode: [
+    { text: "Team battle! Strength in numbers~", emotion: 'pleased' as Emotion },
+    { text: "2v2... when narratives collide, teams form!", emotion: 'excited' as Emotion },
+  ],
+  battleRoyaleMode: [
+    { text: "Battle Royale! Multiple narratives enter... only ONE survives!", emotion: 'excited' as Emotion },
+    { text: "The ultimate test of conviction. May the best thesis win!", emotion: 'sly' as Emotion },
+  ],
+  battleCreating: [
+    { text: "Opening your position via Pear Protocol...", emotion: 'inquisitive' as Emotion },
+    { text: "Executing pair trade... this is it!", emotion: 'excited' as Emotion },
+  ],
+  battleCreated: [
+    { text: "Position LIVE! Your battle has begun~", emotion: 'excited' as Emotion },
+    { text: "Trade executed! Now we watch the market do its thing...", emotion: 'pleased' as Emotion },
+    { text: "You're in! May your narrative prove victorious!", emotion: 'happy' as Emotion },
+  ],
+  battleChallengeCreated: [
+    { text: "Challenge sent! Waiting for your rival to respond...", emotion: 'sly' as Emotion },
+    { text: "The gauntlet has been thrown! Let's see if they accept~", emotion: 'excited' as Emotion },
+  ],
+  battleChallengeReceived: [
+    { text: "INCOMING CHALLENGE! Someone thinks they can beat your narrative!", emotion: 'excited' as Emotion },
+    { text: "You've been challenged! Ready to defend your thesis?", emotion: 'inquisitive' as Emotion },
+  ],
+  battleWinning: [
+    { text: "You're WINNING! Your narrative is outperforming!", emotion: 'happy' as Emotion },
+    { text: "Keep it up! The charts are in your favor~", emotion: 'excited' as Emotion },
+    { text: "Leading the battle... but it's not over yet!", emotion: 'pleased' as Emotion },
+  ],
+  battleLosing: [
+    { text: "We're behind... but battles can turn quickly!", emotion: 'concerned' as Emotion },
+    { text: "Their narrative is winning for now... stay strong!", emotion: 'inquisitive' as Emotion },
+  ],
+  battleWon: [
+    { text: "VICTORY! You've DOMINATED the competition!", emotion: 'excited' as Emotion },
+    { text: "Your narrative proved correct! Champion!", emotion: 'happy' as Emotion },
+    { text: "Another WIN! You're unstoppable~", emotion: 'pleased' as Emotion },
+  ],
+  battleLost: [
+    { text: "Defeat... but every loss teaches us something.", emotion: 'concerned' as Emotion },
+    { text: "They won this round. But there's always the next battle...", emotion: 'kawaii' as Emotion },
+    { text: "The market disagreed with your thesis. It happens~", emotion: 'talkative' as Emotion },
+  ],
+  battleError: [
+    { text: "Something went wrong with the trade... Let's try again.", emotion: 'concerned' as Emotion },
+    { text: "Trade failed. Check your wallet and try once more.", emotion: 'inquisitive' as Emotion },
+  ],
+  pearConnecting: [
+    { text: "Connecting to Pear Protocol... Sign the message in your wallet!", emotion: 'inquisitive' as Emotion },
+    { text: "Authenticating with Pear... Almost there~", emotion: 'talkative' as Emotion },
+  ],
+  pearConnected: [
+    { text: "Connected to Pear Protocol! Ready to battle~", emotion: 'happy' as Emotion },
+    { text: "Authentication complete! The arena awaits~", emotion: 'excited' as Emotion },
+  ],
+  pearDisconnected: [
+    { text: "Disconnected from Pear. Connect again to battle!", emotion: 'concerned' as Emotion },
+  ],
 }
