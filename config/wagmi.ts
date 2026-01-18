@@ -15,6 +15,112 @@ import { mainnet, arbitrum, base, polygon, optimism, avalanche, bsc } from 'viem
 import { hyperEvmMainnet, hyperEvmTestnet } from './chains'
 import { env } from './env'
 
+/**
+ * CRITICAL: Clean up orphaned WalletConnect sessions BEFORE initializing wagmi
+ * This prevents "session topic doesn't exist" errors from the WalletConnect relay
+ */
+function cleanupOrphanedWalletConnectSessions(): void {
+  if (typeof window === 'undefined') return
+
+  try {
+    // Check for WalletConnect v2 session data
+    const wcSessionKey = 'wc@2:client:0.3//session'
+    const wcPairingKey = 'wc@2:client:0.3//pairing'
+    const wcProposalKey = 'wc@2:client:0.3//proposal'
+    const wcCoreKey = 'wc@2:core:0.3//keychain'
+    const wcMessagesKey = 'wc@2:core:0.3//messages'
+    const wcHistoryKey = 'wc@2:core:0.3//history'
+    const wcExpirerKey = 'wc@2:core:0.3//expirer'
+
+    // Get current sessions
+    const sessionData = localStorage.getItem(wcSessionKey)
+    if (sessionData) {
+      try {
+        const sessions = JSON.parse(sessionData)
+        // If sessions array is empty or corrupted, clear all WC data
+        if (!Array.isArray(sessions) || sessions.length === 0) {
+          console.warn('[Wagmi] Empty/corrupted WalletConnect sessions, clearing all WC data...')
+          clearAllWalletConnectData()
+          return
+        }
+
+        // Check if any session has expired
+        const now = Date.now()
+        const validSessions = sessions.filter((session: any) => {
+          if (!session || !session.expiry) return false
+          // Session expiry is in seconds, convert to ms
+          return session.expiry * 1000 > now
+        })
+
+        if (validSessions.length !== sessions.length) {
+          console.warn('[Wagmi] Found expired WalletConnect sessions, clearing...')
+          clearAllWalletConnectData()
+          return
+        }
+      } catch (e) {
+        console.warn('[Wagmi] Failed to parse WalletConnect sessions, clearing...')
+        clearAllWalletConnectData()
+        return
+      }
+    }
+
+    // Also check for mismatched keychain entries (orphaned topics)
+    const keychainData = localStorage.getItem(wcCoreKey)
+    if (keychainData && sessionData) {
+      try {
+        const keychain = JSON.parse(keychainData)
+        const sessions = JSON.parse(sessionData)
+        const sessionTopics = new Set(sessions.map((s: any) => s.topic))
+
+        // If keychain has topics not in sessions, there's a mismatch
+        const keychainTopics = Object.keys(keychain)
+        const orphanedTopics = keychainTopics.filter(topic => !sessionTopics.has(topic))
+
+        if (orphanedTopics.length > 0) {
+          console.warn('[Wagmi] Found orphaned WalletConnect topics, clearing all WC data...')
+          clearAllWalletConnectData()
+          return
+        }
+      } catch (e) {
+        // If we can't parse, clear everything
+        clearAllWalletConnectData()
+        return
+      }
+    }
+  } catch (e) {
+    console.error('[Wagmi] Error during WalletConnect cleanup:', e)
+  }
+}
+
+function clearAllWalletConnectData(): void {
+  if (typeof window === 'undefined') return
+
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && (
+      key.startsWith('wc@') ||
+      key.startsWith('wagmi') ||
+      key.includes('walletconnect') ||
+      key.includes('WALLETCONNECT')
+    )) {
+      keysToRemove.push(key)
+    }
+  }
+
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key)
+    console.debug('[Wagmi] Removed:', key)
+  })
+
+  if (keysToRemove.length > 0) {
+    console.log('[Wagmi] Cleared', keysToRemove.length, 'WalletConnect entries')
+  }
+}
+
+// Run cleanup BEFORE any wagmi initialization
+cleanupOrphanedWalletConnectSessions()
+
 const walletConnectMetadata = {
   name: 'Nemesis',
   description: 'Every trader needs a Nemesis',
@@ -94,3 +200,17 @@ export const wagmiConfig = createConfig({
 })
 
 export type WagmiConfig = typeof wagmiConfig
+
+// Export cleanup function for manual use
+export { clearAllWalletConnectData }
+
+/**
+ * Force clear all wallet sessions and reload the page
+ * Call this if you see "session topic doesn't exist" errors
+ */
+export function forceResetWalletSessions(): void {
+  clearAllWalletConnectData()
+  if (typeof window !== 'undefined') {
+    window.location.reload()
+  }
+}

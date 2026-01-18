@@ -3,10 +3,10 @@
  * Executes the bridge transaction with progress updates
  */
 
-import { executeRoute, updateRouteExecution } from '@lifi/sdk'
-import type { Route, RouteExtended, ExecutionSettings } from '@lifi/sdk'
-import { getLiFiConfig } from './index'
-import { sendTransaction, switchChain, getAccount } from '@wagmi/core'
+import { executeRoute } from '@lifi/sdk'
+import type { Route, RouteExtended } from '@lifi/sdk'
+import { getLiFiConfig, clearBridgeSessions } from './index'
+import { getAccount } from '@wagmi/core'
 import { wagmiConfig } from '@config/wagmi'
 import type { BridgeStep } from '@app/types'
 
@@ -94,21 +94,8 @@ export async function executeBridge(
         }
       },
 
-      // Switch chain if needed
-      switchChainHook: async (requiredChainId: number) => {
-        console.log('[Bridge] Switching to chain:', requiredChainId)
-        try {
-          await switchChain(wagmiConfig, { chainId: requiredChainId })
-        } catch (error) {
-          console.error('[Bridge] Failed to switch chain:', error)
-          throw createExecutionError(
-            'CHAIN_SWITCH_FAILED',
-            `Failed to switch to chain ${requiredChainId}`,
-            undefined,
-            true
-          )
-        }
-      },
+      // Note: Chain switching is handled by the EVM provider configured in index.ts
+      // The switchChainHook there properly returns the WalletClient after switching
 
       // Accept exchange rate updates within tolerance
       acceptExchangeRateUpdateHook: async (params) => {
@@ -141,9 +128,24 @@ export async function executeBridge(
 
   } catch (error: any) {
     console.error('[Bridge] Execution failed:', error)
+    const errorMessage = error?.message || ''
+
+    // Handle WalletConnect session errors
+    if (errorMessage.includes('session topic') ||
+        errorMessage.includes('No matching key') ||
+        errorMessage.includes('session expired')) {
+      console.warn('[Bridge] WalletConnect session error, clearing sessions...')
+      clearBridgeSessions()
+      throw createExecutionError(
+        'SESSION_EXPIRED',
+        'Wallet session expired. Please disconnect and reconnect your wallet.',
+        route.steps[currentStepIndex]?.tool,
+        true
+      )
+    }
 
     // Handle user rejection
-    if (error?.message?.includes('rejected') || error?.message?.includes('denied')) {
+    if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
       throw createExecutionError(
         'USER_REJECTED',
         'Transaction cancelled by user',
@@ -153,7 +155,7 @@ export async function executeBridge(
     }
 
     // Handle insufficient funds
-    if (error?.message?.includes('insufficient') || error?.message?.includes('funds')) {
+    if (errorMessage.includes('insufficient') || errorMessage.includes('funds')) {
       throw createExecutionError(
         'INSUFFICIENT_FUNDS',
         'Insufficient funds for transaction',
@@ -163,7 +165,7 @@ export async function executeBridge(
     }
 
     // Handle timeout
-    if (error?.message?.includes('timeout')) {
+    if (errorMessage.includes('timeout')) {
       throw createExecutionError(
         'TIMEOUT',
         'Transaction timed out. Check your wallet for pending transactions.',
@@ -174,7 +176,7 @@ export async function executeBridge(
 
     throw createExecutionError(
       'EXECUTION_FAILED',
-      error?.message || 'Bridge execution failed',
+      errorMessage || 'Bridge execution failed',
       route.steps[currentStepIndex]?.tool,
       true
     )
