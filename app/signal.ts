@@ -75,19 +75,25 @@ export function typewriterEffect(text: string, onComplete?: () => void) {
     typewriterTimer = null
   }
   clearAutoplayTimer()
-  state.isTyping = true
+
+  // Always store the full text in queue first
+  state.dialogueQueue = [text]
   state.typewriterIndex = 0
   state.currentDialogue = ''
   state.dialogueAtEnd = false
 
   if (!document.getElementById('dialogue-text')) return
 
+  // If paused, don't start typing - just store the text for later
   if (state.dialoguePlayState === 'paused') {
-    state.dialogueQueue = [text]
+    state.isTyping = true // Mark as typing so resume knows to continue
+    render()
     return
   }
 
+  state.isTyping = true
   playTypeSound()
+  updateTypingProgress(0, text.length)
 
   typewriterTimer = window.setInterval(() => {
     const textEl = document.getElementById('dialogue-text')
@@ -102,17 +108,56 @@ export function typewriterEffect(text: string, onComplete?: () => void) {
       state.currentDialogue += text[state.typewriterIndex]
       textEl.textContent = state.currentDialogue
       state.typewriterIndex++
+      updateTypingProgress(state.typewriterIndex, text.length)
     } else {
       if (typewriterTimer) clearInterval(typewriterTimer)
       typewriterTimer = null
       state.isTyping = false
       state.dialogueAtEnd = true
+      state.autoplayKey++ // Increment to restart animation
+      clearTypingProgress()
+      triggerCompletionShimmer()
+      render()
       if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
         startAutoplayTimer()
       }
       if (onComplete) onComplete()
     }
   }, 35)
+}
+
+function updateTypingProgress(current: number, total: number) {
+  const bar = document.querySelector('.dialogue-autoplay-bar') as HTMLElement
+  if (bar) {
+    const progress = total > 0 ? (current / total) * 100 : 0
+    bar.style.width = `${progress}%`
+    bar.classList.add('typing')
+  }
+}
+
+function clearTypingProgress() {
+  const bar = document.querySelector('.dialogue-autoplay-bar') as HTMLElement
+  if (bar) {
+    bar.classList.remove('typing')
+    bar.style.width = '0'
+  }
+}
+
+function triggerCompletionShimmer() {
+  const box = document.querySelector('.dialogue-box') as HTMLElement
+  if (!box) return
+
+  // Remove class first to reset animation if it was already playing
+  box.classList.remove('typing-complete')
+  // Force reflow to restart animation
+  void box.offsetWidth
+  // Add class to trigger shimmer
+  box.classList.add('typing-complete')
+
+  // Remove class after animation completes
+  setTimeout(() => {
+    box.classList.remove('typing-complete')
+  }, 800)
 }
 
 export function skipTypewriter() {
@@ -122,11 +167,22 @@ export function skipTypewriter() {
   }
   const textEl = document.getElementById('dialogue-text')
   if (textEl && state.dialogueQueue.length > 0) {
-    textEl.textContent = state.dialogueQueue[0]
-    state.currentDialogue = state.dialogueQueue[0]
+    const fullText = state.dialogueQueue[0]
+    textEl.textContent = fullText
+    state.currentDialogue = fullText
+    state.typewriterIndex = fullText.length
   }
   state.isTyping = false
   state.dialogueAtEnd = true
+  state.autoplayKey++ // Restart autoplay animation
+  clearTypingProgress()
+  triggerCompletionShimmer()
+  render()
+
+  // Start autoplay timer if enabled
+  if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
+    startAutoplayTimer()
+  }
 }
 
 export function clearDismissTimer() {
@@ -145,6 +201,7 @@ export function clearAutoplayTimer() {
 
 export function togglePausePlay() {
   if (state.dialoguePlayState === 'playing') {
+    // Pausing
     state.dialoguePlayState = 'paused'
     if (typewriterTimer) {
       clearInterval(typewriterTimer)
@@ -152,10 +209,15 @@ export function togglePausePlay() {
     }
     clearAutoplayTimer()
   } else {
+    // Resuming
     state.dialoguePlayState = 'playing'
-    if (state.isTyping && state.dialogueQueue.length > 0) {
+    // Check if we were mid-typing (isTyping was true when paused, or we have unfinished text)
+    if (state.dialogueQueue.length > 0 && state.typewriterIndex < state.dialogueQueue[0].length) {
+      state.isTyping = true
       resumeTypewriter()
     } else if (state.autoplayEnabled && state.dialogueAtEnd) {
+      // Restart autoplay animation and timer
+      state.autoplayKey++
       startAutoplayTimer()
     }
   }
@@ -166,12 +228,35 @@ export function skipDialogue() {
   clearDismissTimer()
   clearAutoplayTimer()
 
-  if (state.isTyping) {
-    skipTypewriter()
+  // Stop any current typing immediately
+  if (typewriterTimer) {
+    clearInterval(typewriterTimer)
+    typewriterTimer = null
   }
+  state.isTyping = false
 
-  if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
-    startAutoplayTimer()
+  // Skip ALWAYS goes to NEXT dialogue (not just finish current)
+  if (state.dialogueSignal === 'connected' || state.dialogueSignal === 'connecting') {
+    if (state.introComplete) {
+      // Main screen: immediately show next random idle dialogue
+      showRandomDialogue('idle')
+    } else {
+      // During intro: advance to next intro line
+      advanceIntroFromSkip()
+    }
+  }
+}
+
+// Callback set by events.ts to allow signal.ts to advance intro without circular deps
+let advanceIntroCallback: (() => void) | null = null
+
+export function setAdvanceIntroCallback(cb: () => void) {
+  advanceIntroCallback = cb
+}
+
+function advanceIntroFromSkip() {
+  if (advanceIntroCallback) {
+    advanceIntroCallback()
   }
 }
 
@@ -206,8 +291,23 @@ function startAutoplayTimer() {
 function resumeTypewriter() {
   if (!document.getElementById('dialogue-text') || state.dialogueQueue.length === 0) return
 
-  playTypeSound()
   const fullText = state.dialogueQueue[0]
+
+  // Don't resume if we're already at the end
+  if (state.typewriterIndex >= fullText.length) {
+    state.isTyping = false
+    state.dialogueAtEnd = true
+    state.autoplayKey++ // Restart autoplay animation
+    triggerCompletionShimmer()
+    render()
+    if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
+      startAutoplayTimer()
+    }
+    return
+  }
+
+  state.isTyping = true
+  playTypeSound()
 
   typewriterTimer = window.setInterval(() => {
     const textEl = document.getElementById('dialogue-text')
@@ -226,6 +326,9 @@ function resumeTypewriter() {
       typewriterTimer = null
       state.isTyping = false
       state.dialogueAtEnd = true
+      state.autoplayKey++ // Restart autoplay animation
+      triggerCompletionShimmer()
+      render()
       if (state.autoplayEnabled && state.dialoguePlayState === 'playing') {
         startAutoplayTimer()
       }

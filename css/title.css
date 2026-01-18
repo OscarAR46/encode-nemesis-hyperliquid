@@ -1,19 +1,35 @@
 .title-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+/* Lock title content - absolutely positioned to never move */
+.title-content {
+  position: absolute;
+  top: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
+}
+
+/* Ensure elements stay in place */
+.title-screen .title-logo,
+.title-screen .title-tagline,
+.title-screen .title-start,
+.title-screen .enter-btn {
   position: relative;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .title-logo {
   font-family: var(--font-title);
-  font-size: 72px;
+  font-size: clamp(36px, 10vw, 72px);
   font-weight: 600;
   color: #fff;
-  letter-spacing: 12px;
+  letter-spacing: clamp(6px, 2vw, 12px);
   text-shadow:
     0 0 40px rgba(100, 180, 255, 0.6),
     0 0 80px rgba(80, 150, 220, 0.4),
@@ -28,12 +44,12 @@
 }
 
 .title-tagline {
-  font-size: 16px;
+  font-size: clamp(12px, 3vw, 16px);
   font-weight: 300;
   color: var(--text-mid);
-  letter-spacing: 4px;
+  letter-spacing: clamp(2px, 1vw, 4px);
   font-style: italic;
-  margin-bottom: 60px;
+  margin-bottom: clamp(30px, 8vh, 60px);
 }
 
 .title-start {
@@ -48,6 +64,50 @@
 @keyframes blink {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+
+/* Enter Nemesis Button - for first-time users */
+.enter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: clamp(16px, 4vw, 24px) clamp(32px, 8vw, 56px);
+  background: linear-gradient(135deg, rgba(100, 180, 255, 0.2) 0%, rgba(80, 150, 220, 0.15) 100%);
+  border: 2px solid var(--accent-cyan);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-title);
+  font-size: clamp(16px, 4vw, 22px);
+  font-weight: 500;
+  color: var(--text-bright);
+  letter-spacing: clamp(2px, 0.5vw, 4px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  box-shadow: 0 0 30px rgba(100, 180, 255, 0.2);
+  animation: enter-pulse 2s ease-in-out infinite;
+}
+
+.enter-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  background: linear-gradient(135deg, rgba(100, 180, 255, 0.35) 0%, rgba(80, 150, 220, 0.25) 100%);
+  border-color: var(--text-bright);
+  box-shadow: 0 8px 40px rgba(100, 180, 255, 0.4);
+}
+
+.enter-btn:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.enter-btn svg {
+  width: clamp(18px, 4vw, 24px);
+  height: clamp(18px, 4vw, 24px);
+  fill: currentColor;
+}
+
+@keyframes enter-pulse {
+  0%, 100% { box-shadow: 0 0 30px rgba(100, 180, 255, 0.2); }
+  50% { box-shadow: 0 0 50px rgba(100, 180, 255, 0.4); }
 }
 
 /* Selection Screen */

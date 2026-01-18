@@ -1,5 +1,12 @@
 export const ICONS = {
   logo: `<svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  wallet: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="14" r="2" fill="currentColor"/></svg>`,
+  metamask: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.3 2L13 8l1.6-3.8L21.3 2zM2.7 2l8.2 6.1L9.4 4.2 2.7 2zm16 14.3l-2.2 3.3 4.7 1.3 1.3-4.6h-3.8zm-16.4 0l1.3 4.6 4.7-1.3-2.2-3.3H2.3zm10.4-5.6L12 12.5l-.7-1.8-2.8 1.2.7 4.4 2.8-1.4 2.8 1.4.7-4.4-2.8-1.2z"/></svg>`,
+  walletconnect: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.1 8.5c3.3-3.2 8.5-3.2 11.8 0l.4.4c.2.2.2.4 0 .6l-1.3 1.3c-.1.1-.2.1-.3 0l-.5-.5c-2.3-2.2-5.9-2.2-8.2 0l-.6.5c-.1.1-.2.1-.3 0L5.8 9.5c-.2-.2-.2-.4 0-.6l.3-.4zm14.6 2.7l1.2 1.2c.2.2.2.4 0 .6l-5.3 5.2c-.2.2-.4.2-.6 0l-3.8-3.7c0-.1-.1-.1-.1 0L8.3 18c-.2.2-.4.2-.6 0L2.4 13c-.2-.2-.2-.4 0-.6l1.2-1.2c.2-.2.4-.2.6 0l3.8 3.7c0 .1.1.1.1 0l3.8-3.7c.2-.2.4-.2.6 0l3.8 3.7c0 .1.1.1.1 0l3.8-3.7c.2-.2.5-.2.6 0z"/></svg>`,
+  coinbase: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/><rect x="8" y="8" width="8" height="8" rx="1" fill="#0052FF"/></svg>`,
+  disconnect: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  copy: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  external: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
   check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`,
   cross: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
   swords: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 17.5L3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M14.5 6.5L18 3h3v3l-3.5 3.5M5 14l4 4M7 17l-3 3M3 19l2 2"/></svg>`,
@@ -9,4 +16,7 @@ export const ICONS = {
   pause: `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
   skip: `<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><rect x="15" y="4" width="4" height="16"/></svg>`,
   autoplay: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+  // Avatar mode icons
+  avatarFull: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="6" r="4"/><path d="M12 12c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg>`,
+  avatarHead: `<svg viewBox="0 0 24 24" fill="currentColor"><ellipse cx="12" cy="8" rx="5" ry="6"/><path d="M12 2c-1.8 0-3.2.6-4 1.8-.5.8-.7 1.6-.6 2.5.1.8.4 1.4.8 2 .6.9 1.4 1.4 2.3 1.7h3c.9-.3 1.7-.8 2.3-1.7.4-.6.7-1.2.8-2 .1-.9-.1-1.7-.6-2.5-.8-1.2-2.2-1.8-4-1.8z" opacity="0.5"/><path d="M7 14c-1 0-2 .5-2 1.5V20h14v-4.5c0-1-1-1.5-2-1.5" opacity="0.4"/></svg>`,
 }

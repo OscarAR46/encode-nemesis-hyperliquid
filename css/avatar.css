@@ -11,46 +11,91 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: 360px;
+  width: clamp(320px, 30vw, 400px);
   display: flex;
   flex-direction: column;
   z-index: 20;
 }
 
-/* Avatar area - visible on all tabs */
+/* Avatar area - main character display */
 .avatar-area {
   position: absolute;
   left: 2%;
   bottom: 0;
-  width: 38%;
-  height: calc(100% - 48px);
+  /* Scales with viewport, respects minimum and maximum */
+  width: clamp(200px, 35vw, 45%);
+  height: clamp(300px, calc(100vh - 200px), calc(100% - 48px));
   display: flex;
   align-items: flex-end;
   justify-content: center;
   pointer-events: none;
-  transition: opacity 0.4s ease;
-  z-index: 10;
+  transition: opacity 0.4s ease, transform 0.3s ease, bottom 0.3s ease, width 0.3s ease, height 0.3s ease;
+  z-index: var(--z-avatar);
 }
 
-.avatar-area.mode-small,
+/* Mode: Full - full avatar visible */
+.avatar-area.mode-full {
+  opacity: 1;
+}
+
+.avatar-area.mode-full .avatar-img {
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+/* Mode: Head - show head only, same position as full but smaller */
+.avatar-area.mode-head {
+  opacity: 1;
+  visibility: visible;
+  /* Smaller container, same left position as full mode */
+  width: clamp(80px, 12vw, 120px);
+  height: clamp(100px, 15vh, 140px);
+  left: 2%;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.avatar-area.mode-head .avatar-img {
+  /* Show top of image (head) - container clips the rest */
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
+  object-fit: cover;
+  object-position: top center;
+  filter: drop-shadow(0 0 15px rgba(80, 160, 220, 0.4));
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Mode: Off - avatar stays visible, dialogue hides */
 .avatar-area.mode-off {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.avatar-area.mode-small .avatar-img,
-.avatar-area.mode-off .avatar-img {
-  pointer-events: none;
-  cursor: default;
+  opacity: 1;
 }
 
 .avatar-img {
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   object-position: bottom center;
   filter: drop-shadow(0 0 30px rgba(80, 160, 220, 0.3));
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+  pointer-events: auto;
+  cursor: pointer;
+  /* Ensure crisp rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Hover glow effect on avatar */
+.avatar-area:hover .avatar-img {
+  filter: drop-shadow(0 0 40px rgba(100, 180, 255, 0.5)) drop-shadow(0 0 60px rgba(80, 160, 220, 0.3));
+}
+
+.avatar-area.mode-full .avatar-img,
+.avatar-area.mode-off .avatar-img {
   pointer-events: auto;
   cursor: pointer;
 }

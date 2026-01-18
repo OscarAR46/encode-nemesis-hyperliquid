@@ -1,0 +1,172 @@
+/* ===========================================
+   WALLET BUTTON - Nemesis Aesthetic
+   =========================================== */
+
+.wallet-btn {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(91, 159, 207, 0.9) 0%, rgba(96, 192, 208, 0.9) 100%);
+  border: 1px solid rgba(100, 180, 255, 0.4);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.wallet-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.4s ease;
+}
+
+.wallet-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.wallet-btn:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 0 20px rgba(100, 180, 255, 0.4);
+  border-color: rgba(100, 180, 255, 0.6);
+}
+
+.wallet-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wallet-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wallet-btn-text {
+  letter-spacing: 0.5px;
+}
+
+/* Connected State */
+.wallet-btn.connected {
+  background: rgba(30, 60, 100, 0.85);
+  border: 1px solid var(--panel-border);
+}
+
+.wallet-btn.connected:hover {
+  background: rgba(40, 80, 130, 0.9);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(100, 180, 255, 0.25);
+}
+
+.wallet-status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--yes-color);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--yes-color);
+  animation: status-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--yes-color); }
+  50% { opacity: 0.6; box-shadow: 0 0 4px var(--yes-color); }
+}
+
+/* Connecting State */
+.wallet-btn.connecting {
+  background: rgba(40, 80, 130, 0.7);
+  border: 1px solid var(--accent-cyan);
+  cursor: wait;
+}
+
+.wallet-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: wallet-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes wallet-spin {
+  to { transform: rotate(360deg); }
+}
+
+.wallet-btn:disabled {
+  cursor: wait;
+}
+
+/* Mobile - compact but show text */
+@media (max-width: 767px) {
+  .wallet-btn {
+    padding: 6px 10px;
+    font-size: 9px;
+    gap: 4px;
+  }
+
+  .wallet-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wallet-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wallet-btn-text {
+    font-size: 9px;
+  }
+
+  .wallet-status-dot {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-btn {
+    padding: 5px 8px;
+    font-size: 8px;
+    gap: 4px;
+  }
+
+  .wallet-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .wallet-icon svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .wallet-btn-text {
+    font-size: 8px;
+    /* Show text, just smaller */
+  }
+
+  .wallet-status-dot {
+    width: 5px;
+    height: 5px;
+  }
+
+  .wallet-spinner {
+    width: 10px;
+    height: 10px;
+  }
+}

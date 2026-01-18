@@ -2,8 +2,8 @@ export type Scene = 'title' | 'selection' | 'main'
 export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
 export type OrderTab = 'yes' | 'no'
 export type PosTab = 'positions' | 'orders' | 'history'
-export type AvatarMode = 'full' | 'small' | 'off'
-export type Emotion = 'intro' | 'kawaii' | 'happy' | 'excited' | 'pleased' | 'sly' | 'talkative' | 'inquisitive' | 'concerned' | 'loss'
+export type AvatarMode = 'full' | 'head' | 'off'
+export type Emotion = 'intro' | 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'inquisitive' | 'talkative' | 'excited' | 'loss'
 export type DialogueSignal = 'off' | 'connecting' | 'connected' | 'disconnecting'
 export type DialoguePlayState = 'playing' | 'paused'
 export type MarketCategory = 'all' | 'crypto' | 'forex' | 'commodities' | 'custom'
@@ -84,12 +84,17 @@ export interface AppState {
   introIndex: number
   introComplete: boolean
   introStarted: boolean
+
+  // Wallet state
   connected: boolean
   address: string
   chainId: 999 | 998 | null
   isConnecting: boolean
   walletError: string | null
   connectorName: string | null
+  showWalletModal: boolean
+  selectedConnectorId: string | null
+
   balance: number
   nav: NavTab
   orderTab: OrderTab
@@ -120,6 +125,7 @@ export interface AppState {
   dialogueAtEnd: boolean
   dialoguePlayState: DialoguePlayState
   autoplayEnabled: boolean
+  autoplayKey: number
   connectionState: ConnectionState
   lastConnectionDialogue: number
   isReturningPlayer: boolean
