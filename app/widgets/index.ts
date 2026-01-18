@@ -3,6 +3,7 @@ import { renderMarketWidget } from '@app/widgets/market'
 import { renderOrderWidget } from '@app/widgets/order'
 import { renderPositionsWidget } from '@app/widgets/positions'
 import { renderBridgeWidget } from '@app/widgets/bridge'
+import { renderBattleWidget } from '@app/widgets/battle'
 import { getVisibleWidgetsSorted, getWidgetsByColumn } from '@app/widgets/base'
 
 // Widget render function registry
@@ -11,6 +12,7 @@ const widgetRenderers: Record<WidgetId, () => string> = {
   order: renderOrderWidget,
   positions: renderPositionsWidget,
   bridge: renderBridgeWidget,
+  battle: renderBattleWidget,
 }
 
 /**

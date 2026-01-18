@@ -1,4 +1,4 @@
-import type { AppState, LayoutConfig, BridgeState } from '@app/types'
+import type { AppState, LayoutConfig, BridgeState, BattleState } from '@app/types'
 
 export const DEFAULT_BRIDGE_STATE: BridgeState = {
   sourceChainId: null,
@@ -17,11 +17,48 @@ export const DEFAULT_BRIDGE_STATE: BridgeState = {
   explorerLink: null,
 }
 
+export const DEFAULT_BATTLE_STATE: BattleState = {
+  // Auth
+  isAuthenticated: false,
+  accessToken: null,
+  refreshToken: null,
+  tokenExpiresAt: null,
+  agentWallet: null,
+
+  // Current battle config
+  selectedMode: 'solo',
+  selectedDuration: '1h',
+  selectedTheme: null,
+  customLongAssets: [],
+  customShortAssets: [],
+  stake: 50,
+  leverage: 2,
+  targetAddress: '',
+
+  // Conditional triggers
+  useTrigger: false,
+  trigger: null,
+
+  // Battle state
+  isCreating: false,
+  createError: null,
+  activeBattles: [],
+  pendingChallenges: [],
+  battleHistory: [],
+  currentBattle: null,
+
+  // UI state
+  showThemeSelector: false,
+  showCustomBuilder: false,
+  showActiveBattles: false,
+}
+
 export const DEFAULT_LAYOUT: LayoutConfig = {
-  version: 2,
+  version: 3,
   widgets: [
     { id: 'market', column: 0, order: 0, visible: true },
     { id: 'order', column: 0, order: 1, visible: true },
+    { id: 'battle', column: 0, order: 2, visible: true },
     { id: 'positions', column: 1, order: 0, visible: true },
   ],
 }
@@ -64,7 +101,7 @@ export const state: AppState = {
   stake: 100,
   targetAddress: '',
   processing: false,
-  panelStates: { market: true, order: true, positions: true, bridge: true },
+  panelStates: { market: true, order: true, positions: true, bridge: true, battle: true },
   marketFilter: 'all',
   particlesHtml: '',
   dialogueSignal: 'off',
@@ -96,6 +133,9 @@ export const state: AppState = {
   // Bridge state (LI.FI integration)
   bridge: structuredClone(DEFAULT_BRIDGE_STATE),
   showBridgePanel: false,
+
+  // Battle state (Pear Protocol integration)
+  battle: structuredClone(DEFAULT_BATTLE_STATE),
 }
 
 export function initData() {

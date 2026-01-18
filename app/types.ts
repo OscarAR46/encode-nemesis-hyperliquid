@@ -1,5 +1,5 @@
 export type Scene = 'title' | 'selection' | 'main' | 'bridge'
-export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio' | 'bridge'
+export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio' | 'bridge' | 'battle'
 export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
 export type PosTab = 'positions' | 'orders' | 'history'
 export type AvatarMode = 'full' | 'head' | 'off'
@@ -14,7 +14,7 @@ export type OrderStatus = 'pending' | 'filled' | 'cancelled'
 export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'
 
 // Widget system types
-export type WidgetId = 'market' | 'order' | 'positions' | 'bridge'
+export type WidgetId = 'market' | 'order' | 'positions' | 'bridge' | 'battle'
 export type WidgetColumn = 0 | 1  // Left column = 0, Right column = 1
 
 // ============================================
@@ -137,6 +137,7 @@ export interface PanelStates {
   order: boolean
   positions: boolean
   bridge: boolean
+  battle: boolean
 }
 
 export interface OrderBookLevel {
@@ -242,4 +243,119 @@ export interface AppState {
   // Bridge state (LI.FI integration)
   bridge: BridgeState
   showBridgePanel: boolean
+
+  // Battle state (Pear Protocol integration)
+  battle: BattleState
+}
+
+// ============================================
+// Battle Types (Pear Protocol Integration)
+// ============================================
+
+export type BattleMode = 'solo' | 'duel' | 'team' | 'royale'
+export type BattleStatus = 'idle' | 'creating' | 'pending' | 'matching' | 'active' | 'settled' | 'cancelled' | 'failed'
+export type BattleDuration = '1h' | '4h' | '24h' | '7d'
+export type PearExecutionType = 'MARKET' | 'TRIGGER' | 'TWAP' | 'LADDER'
+
+export interface BattleAsset {
+  symbol: string
+  weight: number
+  currentPrice?: number
+  entryPrice?: number
+  priceChange?: number
+}
+
+export interface BattleTheme {
+  id: string
+  name: string
+  description: string
+  icon: string
+  assets: BattleAsset[]
+}
+
+export interface BattlePosition {
+  longAssets: BattleAsset[]
+  shortAssets: BattleAsset[]
+  entryValue: number
+  currentValue: number
+  pnl: number
+  pnlPercent: number
+}
+
+export interface BattleParticipant {
+  address: string
+  position: BattlePosition
+  theme?: string
+  themeName?: string
+  rank?: number
+  isUser?: boolean
+}
+
+export interface Battle {
+  id: string
+  mode: BattleMode
+  status: BattleStatus
+  duration: BattleDuration
+  createdAt: number
+  startedAt?: number
+  endsAt?: number
+  stake: number
+  leverage: number
+
+  // Participants
+  challenger: BattleParticipant
+  opponent?: BattleParticipant
+
+  // For team/royale modes
+  participants?: BattleParticipant[]
+
+  // Pear order tracking
+  pearOrderId?: string
+
+  // Results
+  winner?: string
+  settlementTxHash?: string
+}
+
+export interface BattleTrigger {
+  type: 'PRICE' | 'CROSS_ASSET_PRICE' | 'BTC_DOM'
+  value: string
+  direction: 'MORE_THAN' | 'LESS_THAN'
+  assetName?: string
+}
+
+export interface BattleState {
+  // Auth
+  isAuthenticated: boolean
+  accessToken: string | null
+  refreshToken: string | null
+  tokenExpiresAt: number | null
+  agentWallet: string | null
+
+  // Current battle config
+  selectedMode: BattleMode
+  selectedDuration: BattleDuration
+  selectedTheme: string | null
+  customLongAssets: BattleAsset[]
+  customShortAssets: BattleAsset[]
+  stake: number
+  leverage: number
+  targetAddress: string
+
+  // Conditional triggers
+  useTrigger: boolean
+  trigger: BattleTrigger | null
+
+  // Battle state
+  isCreating: boolean
+  createError: string | null
+  activeBattles: Battle[]
+  pendingChallenges: Battle[]
+  battleHistory: Battle[]
+  currentBattle: Battle | null
+
+  // UI state
+  showThemeSelector: boolean
+  showCustomBuilder: boolean
+  showActiveBattles: boolean
 }

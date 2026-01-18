@@ -1,0 +1,638 @@
+/**
+ * Battle Arena Styles
+ * Pear Protocol Pair Trading Integration
+ */
+
+/* Battle Widget Panel */
+.panel[data-widget-id="battle"] {
+  border-color: rgba(160, 112, 192, 0.3);
+}
+
+.panel[data-widget-id="battle"] .panel-head {
+  background: linear-gradient(90deg, rgba(160, 112, 192, 0.15) 0%, transparent 100%);
+}
+
+/* Battle Arena Container */
+.battle-arena {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Mode Selection */
+.battle-modes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.battle-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.battle-mode svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+.battle-mode:hover {
+  background: rgba(160, 112, 192, 0.1);
+  border-color: rgba(160, 112, 192, 0.3);
+  color: var(--text-mid);
+}
+
+.battle-mode:hover svg {
+  opacity: 1;
+}
+
+.battle-mode.active {
+  background: rgba(160, 112, 192, 0.2);
+  border-color: var(--duel-color);
+  color: var(--duel-color);
+}
+
+.battle-mode.active svg {
+  opacity: 1;
+  color: var(--duel-color);
+}
+
+/* Theme Selection */
+.battle-theme-section {
+  position: relative;
+}
+
+.theme-selector-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(20, 40, 70, 0.6);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-mid);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-selector-btn:hover {
+  background: rgba(30, 60, 100, 0.6);
+  border-color: var(--panel-border-hover);
+}
+
+.theme-selector-btn.selected {
+  background: rgba(160, 112, 192, 0.1);
+  border-color: rgba(160, 112, 192, 0.4);
+}
+
+.theme-selector-btn .placeholder {
+  color: var(--text-dim);
+  flex: 1;
+  text-align: left;
+}
+
+.theme-selector-btn .theme-icon {
+  font-size: 18px;
+}
+
+.theme-selector-btn .theme-name {
+  flex: 1;
+  text-align: left;
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.theme-selector-btn .dropdown-arrow {
+  color: var(--text-dim);
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+/* Theme Details */
+.theme-details {
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: rgba(30, 60, 100, 0.3);
+  border-radius: var(--radius);
+}
+
+.theme-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  padding: 3px 0;
+}
+
+.theme-detail-row .label {
+  color: var(--text-dim);
+  min-width: 40px;
+}
+
+.theme-detail-row .value {
+  color: var(--text-bright);
+  font-weight: 500;
+}
+
+.theme-detail-row .value.long {
+  color: var(--yes-color);
+}
+
+.theme-detail-row .value.short {
+  color: var(--no-color);
+}
+
+/* Theme Dropdown */
+.theme-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  z-index: 100;
+  max-height: 350px;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.theme-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(40, 80, 130, 0.3);
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-bright);
+}
+
+.theme-dropdown-close {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.theme-dropdown-close:hover {
+  color: var(--text-bright);
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 10px;
+}
+
+/* Theme Card */
+.theme-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(30, 60, 100, 0.3);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.theme-card:hover {
+  background: rgba(40, 80, 130, 0.4);
+  border-color: var(--panel-border);
+}
+
+.theme-card.selected {
+  background: rgba(160, 112, 192, 0.15);
+  border-color: var(--duel-color);
+}
+
+.theme-card .theme-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.theme-card .theme-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.theme-card .theme-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-card .theme-assets {
+  font-size: 9px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* VS Banner */
+.battle-vs-banner {
+  display: flex;
+  align-items: stretch;
+  background: rgba(30, 60, 100, 0.3);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.vs-side {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vs-side.yours {
+  background: rgba(96, 192, 128, 0.1);
+}
+
+.vs-side.opponent {
+  background: rgba(192, 96, 112, 0.1);
+  text-align: right;
+}
+
+.vs-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.vs-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.vs-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  color: var(--duel-color);
+}
+
+.vs-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Battle Config */
+.battle-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-row {
+  display: flex;
+  gap: 10px;
+}
+
+.config-row .form-group.half {
+  flex: 1;
+}
+
+/* Leverage Select */
+.leverage-select {
+  display: flex;
+  gap: 4px;
+}
+
+.leverage-btn {
+  flex: 1;
+  padding: 8px 4px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.leverage-btn:hover {
+  background: rgba(100, 180, 255, 0.1);
+  color: var(--text-mid);
+}
+
+.leverage-btn.active {
+  background: rgba(160, 112, 192, 0.2);
+  border-color: var(--duel-color);
+  color: var(--duel-color);
+}
+
+/* Duration Select */
+.duration-select {
+  display: flex;
+  gap: 6px;
+}
+
+.duration-btn {
+  flex: 1;
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.duration-btn:hover {
+  background: rgba(100, 180, 255, 0.1);
+  color: var(--text-mid);
+}
+
+.duration-btn.active {
+  background: rgba(160, 112, 192, 0.2);
+  border-color: var(--duel-color);
+  color: var(--duel-color);
+}
+
+/* Battle Summary */
+.battle-summary {
+  padding: 10px 12px;
+  background: rgba(30, 60, 100, 0.3);
+  border-radius: var(--radius);
+}
+
+.battle-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  padding: 4px 0;
+}
+
+.battle-summary .summary-row .label {
+  color: var(--text-dim);
+}
+
+.battle-summary .summary-row .value {
+  color: var(--text-bright);
+  font-weight: 600;
+}
+
+.battle-summary .summary-row .value.profit {
+  color: var(--yes-color);
+}
+
+.battle-summary .summary-row .value.loss {
+  color: var(--no-color);
+}
+
+/* Battle Error */
+.battle-error {
+  padding: 10px 12px;
+  background: rgba(192, 96, 112, 0.1);
+  border: 1px solid rgba(192, 96, 112, 0.3);
+  border-radius: var(--radius);
+  color: var(--no-color);
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Battle Submit Button */
+.battle-submit-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--duel-color) 0%, #7a4aad 100%);
+  border: 1px solid var(--duel-color);
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.battle-submit-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  box-shadow: 0 0 20px rgba(160, 112, 192, 0.4);
+}
+
+.battle-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+}
+
+.battle-submit-btn.solo {
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, #4da6b3 100%);
+  border-color: var(--accent-cyan);
+}
+
+.battle-submit-btn.solo:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(96, 192, 208, 0.4);
+}
+
+.battle-submit-btn.duel {
+  background: linear-gradient(135deg, var(--duel-color) 0%, #7a4aad 100%);
+  border-color: var(--duel-color);
+}
+
+.battle-submit-btn.team {
+  background: linear-gradient(135deg, var(--lobby-color) 0%, #5a7ab0 100%);
+  border-color: var(--lobby-color);
+}
+
+.battle-submit-btn.team:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(112, 144, 192, 0.4);
+}
+
+.battle-submit-btn.royale {
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  border-color: #ffc107;
+}
+
+.battle-submit-btn.royale:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(255, 193, 7, 0.4);
+}
+
+/* Spinner */
+.battle-submit-btn .spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Powered By */
+.battle-powered-by {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-dim);
+  padding-top: 4px;
+}
+
+.battle-powered-by a {
+  color: var(--duel-color);
+  text-decoration: none;
+}
+
+.battle-powered-by a:hover {
+  text-decoration: underline;
+}
+
+/* Active Battles */
+.active-battles {
+  border-top: 1px solid var(--panel-border);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.active-battles-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: rgba(30, 60, 100, 0.3);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.active-battles-header:hover {
+  background: rgba(40, 80, 130, 0.4);
+}
+
+.active-battles-header svg {
+  width: 14px;
+  height: 14px;
+  color: var(--duel-color);
+}
+
+.active-battles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.battle-item {
+  padding: 10px 12px;
+  background: rgba(30, 60, 100, 0.3);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  transition: background 0.2s;
+}
+
+.battle-item:hover {
+  background: rgba(40, 80, 130, 0.4);
+}
+
+.battle-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.battle-item .battle-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-bright);
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.battle-item .battle-mode svg {
+  width: 12px;
+  height: 12px;
+}
+
+.battle-item .battle-pnl {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.battle-item .battle-pnl.up {
+  color: var(--yes-color);
+}
+
+.battle-item .battle-pnl.down {
+  color: var(--no-color);
+}
+
+.battle-item-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .theme-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .config-row {
+    flex-direction: column;
+  }
+
+  .config-row .form-group.half {
+    width: 100%;
+  }
+}

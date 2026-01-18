@@ -1,4 +1,4 @@
-import { state, DEFAULT_LAYOUT, DEFAULT_BRIDGE_STATE } from '@app/state'
+import { state, DEFAULT_LAYOUT, DEFAULT_BRIDGE_STATE, DEFAULT_BATTLE_STATE } from '@app/state'
 import { render } from '@app/render'
 import { playSound } from '@app/audio'
 import { toast, getMarket, formatUSD } from '@app/utils'
@@ -24,11 +24,19 @@ import {
   WalletError,
   getErrorMessage,
 } from '@app/wallet'
-import type { NavTab, OrderTab, PosTab, AvatarMode, WidgetId, SourceToken } from '@app/types'
+import type { NavTab, OrderTab, PosTab, AvatarMode, WidgetId, SourceToken, BattleMode, BattleDuration } from '@app/types'
 import { hyperliquidWS } from '@app/websocket'
 import { toggleEditMode, moveWidgetUp, moveWidgetDown, resetLayout, initDragDrop } from '@app/layout'
 import { SOURCE_CHAINS, COMMON_TOKENS } from '@config/chains'
 import { initLiFi, getQuote, executeBridge } from '@app/bridge'
+import {
+  authenticatePear,
+  isPearAuthenticated,
+  createBattlePosition,
+  getAgentWallet,
+  getThemeById,
+  DEFAULT_SHORT_ASSETS,
+} from '@app/pear'
 import { parseUnits, formatUnits } from 'viem'
 
 function openOrderBook(coin: string) {
@@ -541,6 +549,223 @@ function toggleBridgeChainDropdown() {
   render()
 }
 
+// ============================================
+// Battle Event Handlers (Pear Protocol)
+// ============================================
+
+function handleBattleModeSelect(mode: BattleMode) {
+  if (state.battle.selectedMode === mode) return
+  state.battle.selectedMode = mode
+  playSound([500, 600])
+  render()
+
+  // Show mode-specific dialogue
+  const dialogueKey = `battle${mode.charAt(0).toUpperCase() + mode.slice(1)}Mode` as keyof typeof DIALOGUE
+  setTimeout(() => showRandomDialogue(dialogueKey), 100)
+}
+
+function handleBattleThemeSelect(themeId: string) {
+  state.battle.selectedTheme = themeId
+  state.battle.showThemeSelector = false
+  playSound([500, 600, 700])
+  render()
+
+  // Show theme-specific dialogue
+  const theme = getThemeById(themeId)
+  if (theme) {
+    if (themeId.includes('ai')) {
+      setTimeout(() => showRandomDialogue('battleAiTheme'), 100)
+    } else if (themeId.includes('meme')) {
+      setTimeout(() => showRandomDialogue('battleMemeTheme'), 100)
+    } else if (themeId.includes('hype')) {
+      setTimeout(() => showRandomDialogue('battleHypeTheme'), 100)
+    } else {
+      setTimeout(() => showRandomDialogue('battleThemeSelected'), 100)
+    }
+  }
+}
+
+function handleBattleDurationSelect(duration: BattleDuration) {
+  state.battle.selectedDuration = duration
+  playSound([500])
+  render()
+}
+
+function handleBattleLeverageSelect(leverage: number) {
+  state.battle.leverage = leverage
+  playSound([500])
+  render()
+}
+
+function handleBattleStakeChange(value: string) {
+  const stake = parseFloat(value)
+  if (!isNaN(stake) && stake >= 10) {
+    state.battle.stake = stake
+    render()
+  }
+}
+
+function handleBattleTargetChange(value: string) {
+  state.battle.targetAddress = value
+}
+
+function toggleBattleThemeSelector() {
+  state.battle.showThemeSelector = !state.battle.showThemeSelector
+  playSound([500])
+  render()
+}
+
+function toggleActiveBattles() {
+  state.battle.showActiveBattles = !state.battle.showActiveBattles
+  playSound([500])
+  render()
+}
+
+async function handlePearConnect() {
+  if (!state.connected || !state.address) {
+    toast('Connect your wallet first', 'error')
+    return
+  }
+
+  if (state.battle.isAuthenticated) {
+    return // Already authenticated
+  }
+
+  showRandomDialogue('pearConnecting')
+  render()
+
+  try {
+    const tokens = await authenticatePear(state.address)
+    state.battle.isAuthenticated = true
+    state.battle.accessToken = tokens.accessToken
+    state.battle.refreshToken = tokens.refreshToken
+    state.battle.tokenExpiresAt = tokens.expiresAt
+
+    // Get agent wallet
+    const agentWallet = await getAgentWallet()
+    state.battle.agentWallet = agentWallet
+
+    playSound([523, 659, 784])
+    toast('Connected to Pear Protocol!', 'success')
+    showRandomDialogue('pearConnected')
+    render()
+  } catch (error: any) {
+    console.error('[Battle] Pear auth failed:', error)
+    state.battle.createError = error.message || 'Failed to connect to Pear'
+    toast(error.message || 'Failed to connect', 'error')
+    render()
+  }
+}
+
+async function handleBattleSubmit() {
+  const { battle } = state
+
+  // If not authenticated, connect first
+  if (!battle.isAuthenticated) {
+    await handlePearConnect()
+    return
+  }
+
+  // Validate inputs
+  if (!battle.selectedTheme) {
+    toast('Select a narrative theme first', 'error')
+    return
+  }
+
+  const theme = getThemeById(battle.selectedTheme)
+  if (!theme) {
+    toast('Invalid theme selected', 'error')
+    return
+  }
+
+  if (battle.selectedMode === 'duel' && !battle.targetAddress) {
+    toast('Enter a rival address for 1v1', 'error')
+    return
+  }
+
+  // Start creation
+  state.battle.isCreating = true
+  state.battle.createError = null
+  showRandomDialogue('battleCreating')
+  render()
+
+  try {
+    // Create the pair trade via Pear
+    const result = await createBattlePosition(
+      theme.assets,
+      DEFAULT_SHORT_ASSETS,
+      battle.stake,
+      battle.leverage
+    )
+
+    console.log('[Battle] Position created:', result)
+
+    // Add to active battles
+    const newBattle = {
+      id: result.orderId,
+      mode: battle.selectedMode,
+      status: 'active' as const,
+      duration: battle.selectedDuration,
+      createdAt: Date.now(),
+      startedAt: Date.now(),
+      endsAt: Date.now() + getDurationMs(battle.selectedDuration),
+      stake: battle.stake,
+      leverage: battle.leverage,
+      challenger: {
+        address: state.address,
+        position: {
+          longAssets: theme.assets,
+          shortAssets: DEFAULT_SHORT_ASSETS,
+          entryValue: battle.stake * battle.leverage,
+          currentValue: battle.stake * battle.leverage,
+          pnl: 0,
+          pnlPercent: 0,
+        },
+        theme: battle.selectedTheme,
+        themeName: theme.name,
+        isUser: true,
+      },
+      pearOrderId: result.orderId,
+    }
+
+    state.battle.activeBattles.unshift(newBattle)
+    state.battle.currentBattle = newBattle
+    state.battle.isCreating = false
+
+    playSound([523, 659, 784, 1047])
+    toast('Battle position opened!', 'success')
+    showRandomDialogue('battleCreated')
+    render()
+
+  } catch (error: any) {
+    console.error('[Battle] Failed to create position:', error)
+    state.battle.isCreating = false
+    state.battle.createError = error.message || 'Failed to create position'
+    toast(error.message || 'Failed to create battle', 'error')
+    showRandomDialogue('battleError')
+    render()
+  }
+}
+
+function getDurationMs(duration: BattleDuration): number {
+  switch (duration) {
+    case '1h': return 60 * 60 * 1000
+    case '4h': return 4 * 60 * 60 * 1000
+    case '24h': return 24 * 60 * 60 * 1000
+    case '7d': return 7 * 24 * 60 * 60 * 1000
+  }
+}
+
+function handleBattleReset() {
+  state.battle = structuredClone(DEFAULT_BATTLE_STATE)
+  // Preserve auth state if user is still connected
+  if (isPearAuthenticated()) {
+    state.battle.isAuthenticated = true
+  }
+  playSound([400, 500])
+  render()
+}
+
 export function setupDelegatedEvents() {
   const app = document.getElementById('app')
   if (!app) return
@@ -999,6 +1224,80 @@ export function setupDelegatedEvents() {
       render()
       return
     }
+
+    // ============================================
+    // Battle Event Handlers (Pear Protocol)
+    // ============================================
+
+    // Battle mode selection
+    const battleModeBtn = target.closest('.battle-mode') as HTMLElement | null
+    if (battleModeBtn) {
+      const mode = battleModeBtn.dataset.mode as BattleMode
+      if (mode) {
+        handleBattleModeSelect(mode)
+      }
+      return
+    }
+
+    // Theme selector toggle
+    if (target.closest('#theme-selector-btn')) {
+      toggleBattleThemeSelector()
+      return
+    }
+
+    // Theme dropdown close
+    if (target.closest('#theme-dropdown-close')) {
+      state.battle.showThemeSelector = false
+      render()
+      return
+    }
+
+    // Theme card selection
+    const themeCard = target.closest('.theme-card') as HTMLElement | null
+    if (themeCard) {
+      const themeId = themeCard.dataset.theme
+      if (themeId) {
+        handleBattleThemeSelect(themeId)
+      }
+      return
+    }
+
+    // Duration selection
+    const durationBtn = target.closest('.duration-btn') as HTMLElement | null
+    if (durationBtn) {
+      const duration = durationBtn.dataset.duration as BattleDuration
+      if (duration) {
+        handleBattleDurationSelect(duration)
+      }
+      return
+    }
+
+    // Leverage selection
+    const leverageBtn = target.closest('.leverage-btn') as HTMLElement | null
+    if (leverageBtn) {
+      const leverage = parseInt(leverageBtn.dataset.leverage || '2', 10)
+      handleBattleLeverageSelect(leverage)
+      return
+    }
+
+    // Battle submit button
+    if (target.closest('#battle-submit-btn')) {
+      handleBattleSubmit()
+      return
+    }
+
+    // Toggle active battles
+    if (target.closest('#toggle-active-battles')) {
+      toggleActiveBattles()
+      return
+    }
+
+    // Close theme dropdown when clicking outside
+    if (state.battle.showThemeSelector && !target.closest('.battle-theme-section')) {
+      state.battle.showThemeSelector = false
+      render()
+      return
+    }
   })
 
   app.addEventListener('input', (e) => {
@@ -1032,6 +1331,18 @@ export function setupDelegatedEvents() {
     // Bridge amount input
     if (target.id === 'bridge-amount-input') {
       handleBridgeAmountChange(target.value)
+      return
+    }
+
+    // Battle stake input
+    if (target.id === 'battle-stake-input') {
+      handleBattleStakeChange(target.value)
+      return
+    }
+
+    // Battle target address input
+    if (target.id === 'battle-target-input') {
+      handleBattleTargetChange(target.value)
       return
     }
   })
