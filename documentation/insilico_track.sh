@@ -1,6 +1,6 @@
-#/bin/env zsh
-BASE_URL="${1:-http://localhost:3000}"
-TEST_USER="${2:-0x1234567890abcdef1234567890abcdef12345678}"
+#!/bin/env zsh
+BASE_URL="${1:-https://nemesis.london}"
+TEST_USER="${2:-0x4a697c6F81f69bF8f463E81502c0FD81Fcca860f}"
 
 echo "=== Ledger API Validation ==="
 echo "Base URL: $BASE_URL"
@@ -12,7 +12,7 @@ curl -s "${BASE_URL}/v1/health" | jq '.success, .data.healthy'
 echo
 
 echo "2. Trades"
-curl -s "${BASE_URL}/v1/trades?user=${TEST_USER}&limit=5" | jq '.success, (.data | length)'
+curl -s "${BASE_URL}/v1/trades?user=${TEST_USER}" | jq '.success, (.data | length)'
 echo
 
 echo "3. Position History"
