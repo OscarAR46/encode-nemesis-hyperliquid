@@ -18,7 +18,7 @@ import type { BattleMode, BattleDuration, BattleTheme } from '@app/types'
 
 const battleWidget: WidgetDefinition = {
   id: 'battle',
-  title: 'Battle Arena',
+  title: 'Pear BATTLE ARENA',
   render: renderBattleContent,
 }
 

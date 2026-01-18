@@ -157,6 +157,8 @@ export interface TabTutorialState {
   feed: boolean
   leaderboard: boolean
   portfolio: boolean
+  bridge: boolean
+  battle: boolean
 }
 
 // Widget layout system
