@@ -1,4 +1,4 @@
-import { state } from '@app/state'
+import { state, DEFAULT_LAYOUT } from '@app/state'
 import { render } from '@app/render'
 import { playSound } from '@app/audio'
 import { toast, getMarket, formatUSD } from '@app/utils'
@@ -20,11 +20,13 @@ import { saveUserData, clearUserData } from '@app/storage'
 import {
   connectWallet,
   disconnectWallet,
+  getWalletState,
   WalletError,
   getErrorMessage,
 } from '@app/wallet'
-import type { NavTab, OrderTab, PosTab, AvatarMode } from '@app/types'
+import type { NavTab, OrderTab, PosTab, AvatarMode, WidgetId } from '@app/types'
 import { hyperliquidWS } from '@app/websocket'
+import { toggleEditMode, moveWidgetUp, moveWidgetDown, resetLayout, initDragDrop } from '@app/layout'
 
 function openOrderBook(coin: string) {
   state.showOrderBook = true
@@ -129,6 +131,74 @@ function handlePortraitClick() {
     showRandomDialogue('idle')
   }
   playSound([500])
+}
+
+/**
+ * Handles wallet connection for returning players who lost their session
+ */
+async function handleReturningPlayerWalletConnect() {
+  if (state.isConnecting) return
+
+  state.isConnecting = true
+  state.walletError = null
+  render()
+
+  try {
+    const result = await connectWallet()
+
+    state.connected = true
+    state.address = result.address
+    state.chainId = result.chainId as (999 | 998)
+    state.isConnecting = false
+    state.connectorName = result.connector
+    state.walletError = null
+
+    playSound([523, 659, 784])
+    toast('Wallet reconnected!', 'success')
+    render()
+
+    // Now proceed as returning player
+    setTimeout(() => proceedAsReturningPlayer(), 200)
+
+  } catch (error) {
+    state.isConnecting = false
+
+    if (error instanceof WalletError) {
+      state.walletError = error.type
+
+      if (error.type !== 'USER_REJECTED') {
+        toast(getErrorMessage(error), 'error')
+      } else {
+        toast('Connect your wallet to continue', 'error')
+      }
+    } else {
+      state.walletError = 'UNKNOWN'
+      toast('Connection failed. Please try again.', 'error')
+    }
+
+    render()
+  }
+}
+
+/**
+ * Proceeds to main screen as returning player after wallet is confirmed
+ */
+function proceedAsReturningPlayer() {
+  state.scene = 'title'
+  playSound([523, 659, 784])
+  render()
+
+  // For returning users, automatically start the welcome back dialogue
+  setTimeout(() => {
+    state.introStarted = true
+    const introDialogue = getIntroDialogue()
+    const firstLine = introDialogue[0]
+    if (firstLine) {
+      connectSignal(() => {
+        showDialogue(firstLine)
+      })
+    }
+  }, 300)
 }
 
 async function handleWalletClick() {
@@ -261,24 +331,60 @@ export function setupDelegatedEvents() {
 
     if (state.scene === 'selection') {
       if (target.closest('#btn-continue')) {
-        state.scene = 'title'
-        playSound([523, 659, 784])
-        render()
-        // For returning users, automatically start the welcome back dialogue
-        setTimeout(() => {
-          state.introStarted = true
-          const introDialogue = getIntroDialogue()
-          const firstLine = introDialogue[0]
-          if (firstLine) {
-            connectSignal(() => {
-              showDialogue(firstLine)
-            })
-          }
-        }, 300)
+        // Check FRESH wallet state from wagmi (not cached state)
+        const currentWalletState = getWalletState()
+
+        if (!currentWalletState.connected) {
+          // Show wallet session lost modal
+          state.showWalletSessionModal = true
+          playSound([300, 200])
+          render()
+
+          // After 3 seconds, start fade out and trigger wallet connection
+          setTimeout(() => {
+            // Add closing class for fade-out animation
+            const overlay = document.querySelector('.wallet-session-overlay')
+            if (overlay) {
+              overlay.classList.add('closing')
+            }
+
+            // Trigger wallet connect slightly before modal fully fades
+            setTimeout(() => {
+              handleReturningPlayerWalletConnect()
+            }, 200)
+
+            // Remove modal after fade completes
+            setTimeout(() => {
+              state.showWalletSessionModal = false
+              render()
+            }, 500)
+          }, 3000)
+          return
+        }
+
+        // Wallet is connected - sync state and proceed
+        state.connected = true
+        state.address = currentWalletState.address || ''
+        state.chainId = currentWalletState.chainId as (999 | 998 | null)
+        state.connectorName = currentWalletState.connector
+
+        proceedAsReturningPlayer()
         return
       }
       if (target.closest('#btn-new-game')) {
         clearUserData()
+
+        // Always try to disconnect wallet (clears wagmi storage too)
+        disconnectWallet().catch(() => {})
+        state.connected = false
+        state.address = ''
+        state.chainId = null
+        state.connectorName = null
+        state.walletError = null
+
+        // Reset layout to default
+        state.layoutConfig = structuredClone(DEFAULT_LAYOUT)
+
         state.isReturningPlayer = false
         state.tutorialComplete = false
         state.tabTutorialShown = {
@@ -425,8 +531,46 @@ export function setupDelegatedEvents() {
       }
     }
 
+    // Edit mode toggle button
+    if (target.closest('#edit-layout-btn')) {
+      toggleEditMode()
+      playSound([500])
+      initDragDrop()
+      return
+    }
+
+    // Widget move buttons (mobile reorder)
+    const moveBtn = target.closest('.widget-move-btn') as HTMLElement | null
+    if (moveBtn && state.editMode) {
+      e.stopPropagation()
+      const action = moveBtn.dataset.action
+      const widgetId = moveBtn.dataset.widget as WidgetId
+      if (widgetId) {
+        if (action === 'move-up') {
+          moveWidgetUp(widgetId)
+        } else if (action === 'move-down') {
+          moveWidgetDown(widgetId)
+        }
+        playSound([500])
+        initDragDrop()
+      }
+      return
+    }
+
+    // Reset layout button
+    if (target.closest('#reset-layout-btn')) {
+      resetLayout()
+      playSound([400, 500, 600])
+      toast('Layout reset to default')
+      initDragDrop()
+      return
+    }
+
     const panelHead = target.closest('.panel-head') as HTMLElement | null
     if (panelHead) {
+      // In edit mode, panel heads are drag handles - don't toggle collapse
+      if (state.editMode) return
+
       const panel = panelHead.dataset.panel as keyof typeof state.panelStates
       if (panel && state.panelStates[panel] !== undefined) {
         state.panelStates[panel] = !state.panelStates[panel]

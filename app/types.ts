@@ -1,6 +1,6 @@
 export type Scene = 'title' | 'selection' | 'main'
 export type NavTab = 'trade' | 'feed' | 'leaderboard' | 'portfolio'
-export type OrderTab = 'yes' | 'no'
+export type OrderTab = 'yes' | 'no' | 'lobby' | 'duel'
 export type PosTab = 'positions' | 'orders' | 'history'
 export type AvatarMode = 'full' | 'head' | 'off'
 export type Emotion = 'intro' | 'happy' | 'kawaii' | 'pleased' | 'sly' | 'concerned' | 'inquisitive' | 'talkative' | 'excited' | 'loss'
@@ -12,6 +12,10 @@ export type PositionType = 'standard' | 'lobby' | 'duel'
 export type PositionStatus = 'open' | 'closed' | 'pending'
 export type OrderStatus = 'pending' | 'filled' | 'cancelled'
 export type ConnectionState = 'CONNECTED' | 'DEGRADED' | 'UNSTABLE' | 'DISCONNECTED'
+
+// Widget system types
+export type WidgetId = 'market' | 'order' | 'positions'
+export type WidgetColumn = 0 | 1  // Left column = 0, Right column = 1
 
 export interface DialogueLine {
   text: string
@@ -91,6 +95,19 @@ export interface TabTutorialState {
   portfolio: boolean
 }
 
+// Widget layout system
+export interface WidgetPosition {
+  id: WidgetId
+  column: WidgetColumn    // Which column the widget is in
+  order: number           // Sort order within the column
+  visible: boolean        // Show/hide toggle
+}
+
+export interface LayoutConfig {
+  version: number
+  widgets: WidgetPosition[]
+}
+
 export interface AppState {
   scene: Scene
   introIndex: number
@@ -151,4 +168,11 @@ export interface AppState {
   orderBook: OrderBookData | null
   showOrderBook: boolean
   orderBookCoin: string
+
+  // Layout customization
+  editMode: boolean
+  layoutConfig: LayoutConfig
+
+  // Wallet session lost modal
+  showWalletSessionModal: boolean
 }

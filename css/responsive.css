@@ -10,10 +10,10 @@
 /* Tablet Landscape (901-1200px) */
 @media (max-width: 1200px) and (min-width: 901px) {
   .content-area {
-    width: clamp(300px, 32vw, 360px);
+    width: clamp(480px, 50vw, 600px);
   }
   .avatar-area {
-    width: clamp(180px, 32vw, 380px);
+    width: clamp(180px, 28vw, 320px);
     left: 2%;
   }
   .logo-tagline { display: none; }
@@ -25,7 +25,7 @@
     position: absolute;
     right: 0;
     top: 0;
-    width: clamp(280px, 45vw, 380px);
+    width: clamp(400px, 55vw, 520px);
     padding: 12px;
     padding-bottom: 160px; /* Space for dialogue */
     overflow-y: auto;
@@ -263,9 +263,29 @@
   .dialogue-ctrl-divider { display: none; }
   .title-logo { font-size: clamp(32px, 9vw, 48px); letter-spacing: clamp(4px, 1.5vw, 8px); }
   .title-tagline { font-size: clamp(11px, 2.8vw, 14px); }
-  .panels-container { padding: 0 10px; width: 100%; }
+  .panels-container {
+    padding: 0 10px;
+    width: 100%;
+    flex-direction: column;
+  }
+  .widget-column {
+    width: 100%;
+  }
   .full-page { padding: 10px; }
   .portfolio-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* Edit mode - mobile large */
+  .edit-layout-btn span { display: none; }
+  .edit-layout-btn { padding: 8px; }
+  .edit-mode-actions { gap: 4px; }
+  .reset-layout-btn { padding: 6px 8px; font-size: 9px; }
+  .panels-container.edit-mode::before {
+    content: 'Drag panels or use arrows to reorder';
+    font-size: 10px;
+    padding: 8px;
+  }
+  .widget-edit-controls { display: flex; }
+  .widget-move-btn { width: 28px; height: 28px; }
 }
 
 /* Mobile Small (≤480px) - iPhone dimensions */
@@ -434,7 +454,14 @@
   .selection-btn { padding: 18px 28px; min-width: 200px; }
   .selection-message { font-size: 15px; padding: 0 20px; text-align: center; }
   .selection-question { font-size: 13px; }
-  .panels-container { padding: 0 8px; width: 100%; }
+  .panels-container {
+    padding: 0 8px;
+    width: 100%;
+    flex-direction: column;
+  }
+  .widget-column {
+    width: 100%;
+  }
   .full-page { padding: 10px 8px; }
   .portfolio-stats { grid-template-columns: 1fr; gap: 10px; }
   .portfolio-stat-value { font-size: 18px; }
@@ -443,6 +470,24 @@
   .feed-item { padding: 12px; }
   .connection-indicator { bottom: 8px; left: 8px; padding: 4px 8px; font-size: 10px; }
   .diagnostic-panel { width: calc(100% - 16px); left: 8px; bottom: 45px; }
+
+  /* Edit mode - mobile small */
+  .edit-layout-btn span { display: none; }
+  .edit-layout-btn { padding: 6px; }
+  .edit-layout-btn svg { width: 12px; height: 12px; }
+  .edit-mode-actions { gap: 3px; }
+  .reset-layout-btn { padding: 5px 6px; font-size: 8px; }
+  .panels-container.edit-mode::before {
+    content: 'Use arrows to reorder';
+    font-size: 9px;
+    padding: 6px;
+    margin-bottom: 8px;
+  }
+  .widget-edit-controls { display: flex; gap: 2px; }
+  .widget-move-btn { width: 26px; height: 26px; }
+  .widget-move-btn svg { width: 10px; height: 10px; }
+  .panels-container.edit-mode .panel-head::before { font-size: 10px; left: 6px; }
+  .panels-container.edit-mode .panel-title { margin-left: 14px; }
 }
 
 /* Mobile title/selection screens */
@@ -550,7 +595,7 @@
     width: clamp(450px, 45vw, 650px);
   }
   .avatar-area {
-    width: clamp(300px, 38vw, 550px);
+    width: clamp(300px, 32vw, 450px);
   }
   /* Hide avatar-area in head mode - dialogue-portrait handles it */
   .avatar-area.mode-head {
@@ -563,13 +608,13 @@
 /* Very large screens (1600px+) */
 @media (min-width: 1600px) {
   .content-area {
-    width: clamp(380px, 25vw, 450px);
+    width: clamp(650px, 48vw, 800px);
   }
   .dialogue-container {
     width: clamp(500px, 40vw, 700px);
     height: clamp(130px, 15vh, 170px);
   }
   .avatar-area {
-    width: clamp(400px, 35vw, 600px);
+    width: clamp(400px, 30vw, 500px);
   }
 }

@@ -140,36 +140,24 @@ export async function connectWallet(preferredConnector?: Connector): Promise<Con
   
   try {
     const connectors = getConnectors(wagmiConfig)
-    
+
     let connector: Connector | undefined = preferredConnector
-    
+
     if (!connector) {
-      const injected = connectors.find(c => c.id === 'injected')
-      
-      if (injected) {
-        try {
-          const provider = await injected.getProvider()
-          if (provider) {
-            connector = injected
-          }
-        } catch {
-          // No injected provider, fall through to WalletConnect
-        }
-      }
-      
-      if (!connector) {
-        connector = connectors.find(c => c.id === 'walletConnect')
-      }
-      
+      // Priority: WalletConnect first for integrated in-page modal experience
+      // Users can select MetaMask or other wallets from within the WalletConnect modal
+      connector = connectors.find(c => c.id === 'walletConnect')
+
+      // Fallback to first available if WalletConnect not found
       if (!connector) {
         connector = connectors[0]
       }
     }
-    
+
     if (!connector) {
       throw new WalletError('CONNECTOR_NOT_FOUND', 'No wallet connector available')
     }
-    
+
     const result = await connect(wagmiConfig, { connector })
     
     const chainId = result.chainId
