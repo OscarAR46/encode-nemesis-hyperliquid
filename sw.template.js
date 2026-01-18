@@ -1,14 +1,10 @@
 const CACHE_NAME = 'nemesis-__CACHE_VERSION__'
 
 const STATIC_ASSETS = [
-  // Core
   '/',
   '/index.html',
   '/app.js',
   '/style.css',
-  '/icon.png',
-
-  // CSS modules
   '/css/base.css',
   '/css/backgrounds.css',
   '/css/title.css',
@@ -20,22 +16,15 @@ const STATIC_ASSETS = [
   '/css/pages.css',
   '/css/connection.css',
   '/css/wallet.css',
-  '/css/battle.css',
-  '/css/bridge.css',
-  '/css/edit-mode.css',
   '/css/utils.css',
   '/css/responsive.css',
-
-  // Fonts
+  '/icon.png',
   '/fonts/Quicksand/Quicksand-VariableFont_wght.woff2',
   '/fonts/Cinzel/Cinzel-VariableFont_wght.woff2',
-
-  // Nemesis-chan sprites
   '/nemesis-chan/concerned.png',
   '/nemesis-chan/excited.png',
   '/nemesis-chan/happy.png',
   '/nemesis-chan/inquisitive.png',
-  '/nemesis-chan/intro.png',
   '/nemesis-chan/kawaii.png',
   '/nemesis-chan/loss.png',
   '/nemesis-chan/pleased.png',
@@ -64,34 +53,21 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
-
-  // Skip non-GET requests
+  
   if (request.method !== 'GET') return
-
-  // Skip API routes - always go to network for live data
   if (url.pathname.startsWith('/v1/')) return
-
-  // Skip WebSocket upgrade requests
-  if (request.headers.get('Upgrade') === 'websocket') return
-
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) return
-
+  if (url.hostname !== location.hostname) return
+  
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached
-
       return fetch(request).then(response => {
-        // Only cache successful same-origin responses
         if (response.ok && response.type === 'basic') {
           const clone = response.clone()
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
         }
         return response
-      }).catch(() => {
-        // Offline fallback
-        return new Response('Offline', { status: 503 })
-      })
+      }).catch(() => new Response('Offline', { status: 503 }))
     })
   )
 })
