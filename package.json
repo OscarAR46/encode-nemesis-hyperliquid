@@ -1,6 +1,7 @@
 {
   "name": "nemesis",
   "dependencies": {
+    "@lifi/sdk": "^3.15.3",
     "@wagmi/connectors": "^5.3.0",
     "@wagmi/core": "^2.14.0",
     "morphdom": "^2.7.7",

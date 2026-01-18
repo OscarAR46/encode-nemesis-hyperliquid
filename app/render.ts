@@ -4,6 +4,7 @@ import { ICONS } from '@app/icons'
 import { formatTime, formatUSD, formatCompact, truncAddr, getMarket, getTotalPnl } from '@app/utils'
 import { connectionMonitor } from '@app/connection'
 import { renderColumnWidgets } from '@app/widgets'
+import { renderBridgeWidget } from '@app/widgets/bridge'
 
 export function render() {
   const app = document.getElementById('app')
@@ -152,6 +153,7 @@ function renderMainInterface(): string {
               <span class="logo-tagline">Every trader needs a Nemesis.</span>
             </div>
             <nav class="nav">
+              <button class="nav-btn nav-btn-bridge ${state.nav === 'bridge' ? 'active' : ''}" data-nav="bridge">Bridge</button>
               <button class="nav-btn ${state.nav === 'trade' ? 'active' : ''}" data-nav="trade">Trade</button>
               <button class="nav-btn ${state.nav === 'feed' ? 'active' : ''}" data-nav="feed">Feed</button>
               <button class="nav-btn ${state.nav === 'leaderboard' ? 'active' : ''}" data-nav="leaderboard">Leaderboard</button>
@@ -173,6 +175,7 @@ function renderMainInterface(): string {
             <img id="avatar-img" class="avatar-img" src="nemesis-chan/${state.currentEmotion}.png" alt="Nemesis">
           </div>
           <div class="content-area">
+            ${state.nav === 'bridge' ? renderBridgePage() : ''}
             ${state.nav === 'trade' ? renderTradeContent() : ''}
             ${state.nav === 'feed' ? renderFeedPage() : ''}
             ${state.nav === 'leaderboard' ? renderLeaderboardPage() : ''}
@@ -317,6 +320,43 @@ function renderPortfolioPage(): string {
   const total = state.history.length
   const winRate = total > 0 ? (wins / total * 100).toFixed(1) : '0.0'
   return `<div class="full-page"><h1 class="page-title">:: Portfolio ::</h1><div class="portfolio-stats"><div class="portfolio-stat"><div class="portfolio-stat-label">Balance</div><div class="portfolio-stat-value">${formatUSD(state.balance)}</div></div><div class="portfolio-stat"><div class="portfolio-stat-label">Open Value</div><div class="portfolio-stat-value">${formatUSD(totalValue)}</div></div><div class="portfolio-stat"><div class="portfolio-stat-label">Total P&L</div><div class="portfolio-stat-value ${totalPnl >= 0 ? 'up' : ''}">${totalPnl >= 0 ? '+' : ''}${formatUSD(totalPnl)}</div></div><div class="portfolio-stat"><div class="portfolio-stat-label">Win Rate</div><div class="portfolio-stat-value">${winRate}%</div></div></div></div>`
+}
+
+function renderBridgePage(): string {
+  return `
+    <div class="bridge-page">
+      <div class="bridge-hero">
+        <h1 class="bridge-title">${ICONS.bridge} Bridge to HyperEVM</h1>
+        <p class="bridge-subtitle">One-click onboarding from any chain. Powered by LI.FI.</p>
+      </div>
+      <div class="bridge-container">
+        ${renderBridgeWidget()}
+      </div>
+      <div class="bridge-info">
+        <div class="bridge-info-item">
+          <span class="info-icon">${ICONS.check}</span>
+          <div>
+            <strong>Best Routes</strong>
+            <p>LI.FI finds the cheapest and fastest path across chains.</p>
+          </div>
+        </div>
+        <div class="bridge-info-item">
+          <span class="info-icon">${ICONS.wallet}</span>
+          <div>
+            <strong>7 Chains Supported</strong>
+            <p>Bridge from Ethereum, Arbitrum, Base, Polygon, Optimism, Avalanche, or BNB Chain.</p>
+          </div>
+        </div>
+        <div class="bridge-info-item">
+          <span class="info-icon">${ICONS.swords}</span>
+          <div>
+            <strong>Start Trading Immediately</strong>
+            <p>Once bridged, you can trade on Hyperliquid perpetuals right away.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
 }
 
 function renderMarketModal(): string {

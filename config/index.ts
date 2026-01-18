@@ -6,6 +6,12 @@ export {
   getChainById,
   isChainSupported,
   getDefaultChain,
-  type SupportedChainId
+  getSourceChainById,
+  getTokensForChain,
+  SOURCE_CHAINS,
+  COMMON_TOKENS,
+  HYPEREVM_TOKENS,
+  type SupportedChainId,
+  type SourceChainId
 } from './chains'
 export { wagmiConfig, type WagmiConfig } from './wagmi'

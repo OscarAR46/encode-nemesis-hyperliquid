@@ -1,4 +1,21 @@
-import type { AppState, LayoutConfig } from '@app/types'
+import type { AppState, LayoutConfig, BridgeState } from '@app/types'
+
+export const DEFAULT_BRIDGE_STATE: BridgeState = {
+  sourceChainId: null,
+  sourceToken: null,
+  amount: '',
+  destinationToken: 'HYPE',
+  quote: null,
+  isLoadingQuote: false,
+  quoteError: null,
+  status: 'idle',
+  currentStepIndex: 0,
+  steps: [],
+  txHash: null,
+  error: null,
+  finalAmount: null,
+  explorerLink: null,
+}
 
 export const DEFAULT_LAYOUT: LayoutConfig = {
   version: 2,
@@ -47,7 +64,7 @@ export const state: AppState = {
   stake: 100,
   targetAddress: '',
   processing: false,
-  panelStates: { market: true, order: true, positions: true },
+  panelStates: { market: true, order: true, positions: true, bridge: true },
   marketFilter: 'all',
   particlesHtml: '',
   dialogueSignal: 'off',
@@ -75,6 +92,10 @@ export const state: AppState = {
 
   // Wallet session lost modal
   showWalletSessionModal: false,
+
+  // Bridge state (LI.FI integration)
+  bridge: structuredClone(DEFAULT_BRIDGE_STATE),
+  showBridgePanel: false,
 }
 
 export function initData() {
