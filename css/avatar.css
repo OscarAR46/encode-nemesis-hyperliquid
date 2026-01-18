@@ -24,7 +24,7 @@
   bottom: 0;
   /* Scales with viewport, respects minimum and maximum */
   width: clamp(200px, 35vw, 45%);
-  height: clamp(300px, calc(100vh - 200px), calc(100% - 48px));
+  height: clamp(300px, calc(100vh - 250px), calc(100% - 48px));
   display: flex;
   align-items: flex-end;
   justify-content: center;

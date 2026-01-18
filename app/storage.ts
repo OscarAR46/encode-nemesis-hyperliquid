@@ -2,10 +2,10 @@ import { state, DEFAULT_LAYOUT } from '@app/state'
 import type { NavTab, AvatarMode, LayoutConfig, WidgetId, WidgetColumn } from '@app/types'
 
 const STORAGE_KEY = 'nemesis_user_data'
-const STORAGE_VERSION = 4 // v4: Added column-based layout
+const STORAGE_VERSION = 5 // v5: Refresh
 
 // All valid widget IDs - must match WidgetId type
-const VALID_WIDGET_IDS: WidgetId[] = ['market', 'order', 'positions']
+const VALID_WIDGET_IDS: WidgetId[] = ['market', 'order', 'positions', 'bridge', 'battle']
 const VALID_COLUMNS: WidgetColumn[] = [0, 1]
 
 /**
@@ -84,10 +84,12 @@ function getDefaultData(): StoredData {
     hasVisited: false,
     tutorialComplete: false,
     tabTutorialShown: {
-      trade: false,
-      feed: false,
-      leaderboard: false,
-      portfolio: false,
+        trade: false,
+        feed: false,
+        leaderboard: false,
+        portfolio: false,
+        bridge: false,
+        battle: false,
     },
     avatarMode: 'full',
     autoplayEnabled: false,
