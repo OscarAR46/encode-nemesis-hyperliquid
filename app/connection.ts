@@ -163,6 +163,17 @@ class ServerHealthProbe {
     }
   }
 
+  // Allow external marking of server status (from SW)
+  markFailing(message: string) {
+    this.healthy = false
+    this.lastCheck = Date.now()
+  }
+
+  markHealthy() {
+    this.healthy = true
+    this.lastCheck = Date.now()
+  }
+
   getLastReport(): ProbeReport {
     if (!this.lastCheck) return { name: 'serverHealth', status: 'unknown', lastUpdate: 0, message: 'Checking' }
     return {
@@ -274,6 +285,7 @@ class ConnectionMonitor extends EventEmitter {
     this.emit('probeUpdate', { probe: 'browser', report: this.browser.getReport() })
 
     this.startChecks()
+    this.setupServiceWorkerListener()  // NEW: Listen for SW messages
     this.initialized = true
     this.log('state_change', { previous: null, current: this.currentState })
   }
@@ -282,6 +294,43 @@ class ConnectionMonitor extends EventEmitter {
     if (this.serverInterval) clearInterval(this.serverInterval)
     if (this.exchangeInterval) clearInterval(this.exchangeInterval)
     this.initialized = false
+  }
+
+  // ==========================================================================
+  // NEW: Service Worker message listener for INSTANT error detection
+  // ==========================================================================
+  private setupServiceWorkerListener() {
+    if (!('serviceWorker' in navigator)) return
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      const { type, path, status, message, timestamp } = event.data || {}
+
+      switch (type) {
+        case 'SERVER_ERROR':
+          console.warn(`[Connection] SW detected server error: ${status} on ${path}`)
+          this.server.markFailing(`${status} on ${path}`)
+          this.log('error', { source: 'serviceWorker', type: 'SERVER_ERROR', status, path, timestamp })
+          this.emit('probeUpdate', { probe: 'serverHealth', report: this.server.getLastReport() })
+          this.evaluate()
+          break
+
+        case 'NETWORK_ERROR':
+          console.warn(`[Connection] SW detected network error: ${message} on ${path}`)
+          this.server.markFailing(message || 'Network error')
+          this.log('error', { source: 'serviceWorker', type: 'NETWORK_ERROR', message, path, timestamp })
+          this.emit('probeUpdate', { probe: 'serverHealth', report: this.server.getLastReport() })
+          this.evaluate()
+          break
+
+        case 'SERVER_RECOVERED':
+          console.log(`[Connection] SW detected server recovery on ${path}`)
+          this.server.markHealthy()
+          this.log('reconnect', { source: 'serviceWorker', path, timestamp })
+          this.emit('probeUpdate', { probe: 'serverHealth', report: this.server.getLastReport() })
+          this.evaluate()
+          break
+      }
+    })
   }
 
   private startChecks() {

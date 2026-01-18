@@ -2,13 +2,12 @@
  * Pear Protocol API Client
  *
  * Handles authentication and trade execution via the Pear Execution API.
- * Pear is an execution layer for pair & basket trading on Hyperliquid.
- *
- * API Base: https://hl-v2.pearprotocol.io
- * Docs: https://docs.pearprotocol.io/api-integration/overview
+ * 
+ * IMPORTANT: Pear requires EIP-712 signatures on Arbitrum (42161).
+ * This client handles chain switching transparently.
  */
 
-import { signTypedData } from '@wagmi/core'
+import { signTypedData, getChainId, switchChain } from '@wagmi/core'
 import { wagmiConfig } from '@config/wagmi'
 import type { BattleAsset, PearExecutionType, BattleTrigger } from '@app/types'
 
@@ -17,6 +16,7 @@ import type { BattleAsset, PearExecutionType, BattleTrigger } from '@app/types'
 // ============================================
 
 const PEAR_API_BASE = 'https://hl-v2.pearprotocol.io'
+const ARBITRUM_CHAIN_ID = 42161
 
 // Hackathon Client IDs provided by Pear
 const PEAR_CLIENT_IDS = [
@@ -24,7 +24,6 @@ const PEAR_CLIENT_IDS = [
   'HLHackathon6', 'HLHackathon7', 'HLHackathon8', 'HLHackathon9', 'HLHackathon10'
 ] as const
 
-// Use first hackathon ID (or rotate for load balancing)
 const CLIENT_ID = PEAR_CLIENT_IDS[0]
 
 // ============================================
@@ -99,7 +98,6 @@ interface PearPosition {
 
 let pearTokens: PearTokens | null = null
 
-// Persist tokens to localStorage
 function saveTokens(tokens: PearTokens): void {
   pearTokens = tokens
   if (typeof window !== 'undefined') {
@@ -107,7 +105,6 @@ function saveTokens(tokens: PearTokens): void {
   }
 }
 
-// Load tokens from localStorage
 function loadTokens(): PearTokens | null {
   if (typeof window === 'undefined') return null
   try {
@@ -122,7 +119,6 @@ function loadTokens(): PearTokens | null {
   return null
 }
 
-// Clear tokens
 function clearTokens(): void {
   pearTokens = null
   if (typeof window !== 'undefined') {
@@ -130,15 +126,12 @@ function clearTokens(): void {
   }
 }
 
-// Check if authenticated
 export function isPearAuthenticated(): boolean {
   const tokens = pearTokens || loadTokens()
   if (!tokens) return false
-  // Check if token is expired (with 60s buffer)
   return Date.now() < tokens.expiresAt - 60000
 }
 
-// Get current tokens
 export function getPearTokens(): PearTokens | null {
   return pearTokens || loadTokens()
 }
@@ -147,9 +140,6 @@ export function getPearTokens(): PearTokens | null {
 // Authentication
 // ============================================
 
-/**
- * Get EIP-712 message for signing
- */
 async function getEIP712Message(address: string): Promise<EIP712Message> {
   const url = new URL(`${PEAR_API_BASE}/auth/eip712-message`)
   url.searchParams.set('address', address)
@@ -169,25 +159,59 @@ async function getEIP712Message(address: string): Promise<EIP712Message> {
 }
 
 /**
- * Authenticate with Pear Protocol using EIP-712 signature
+ * Authenticate with Pear Protocol
+ * 
+ * IMPORTANT: Pear requires signing on Arbitrum (42161).
+ * This function handles chain switching automatically.
  */
 export async function authenticatePear(address: string): Promise<PearTokens> {
   console.log('[Pear] Authenticating...', address)
 
   // Step 1: Get EIP-712 message
   const eip712Data = await getEIP712Message(address)
-  console.log('[Pear] Got EIP-712 message:', eip712Data)
+  console.log('[Pear] Got EIP-712 message, required chainId:', eip712Data.domain.chainId)
 
-  // Step 2: Sign with wallet
-  const signature = await signTypedData(wagmiConfig, {
-    domain: eip712Data.domain as any,
-    types: eip712Data.types as any,
-    primaryType: 'Authentication',
-    message: eip712Data.message as any
-  })
-  console.log('[Pear] Signature obtained')
+  // Step 2: Store current chain to restore later
+  const originalChainId = getChainId(wagmiConfig)
+  const requiredChainId = eip712Data.domain.chainId // Should be 42161 (Arbitrum)
+  
+  console.log('[Pear] Current chain:', originalChainId, '| Required chain:', requiredChainId)
 
-  // Step 3: Submit signature to authenticate
+  let signature: string
+
+  try {
+    // Step 3: Switch to Arbitrum if needed
+    if (originalChainId !== requiredChainId) {
+      console.log('[Pear] Switching to Arbitrum for authentication...')
+      await switchChain(wagmiConfig, { chainId: requiredChainId })
+      // Wait for state to settle
+      await new Promise(resolve => setTimeout(resolve, 300))
+    }
+
+    // Step 4: Sign the message (now on correct chain)
+    signature = await signTypedData(wagmiConfig, {
+      domain: eip712Data.domain as any,
+      types: eip712Data.types as any,
+      primaryType: 'Authentication',
+      message: eip712Data.message as any
+    })
+    console.log('[Pear] Signature obtained')
+
+  } finally {
+    // Step 5: Switch back to original chain
+    if (originalChainId !== requiredChainId) {
+      console.log('[Pear] Switching back to chain:', originalChainId)
+      try {
+        await switchChain(wagmiConfig, { chainId: originalChainId })
+        await new Promise(resolve => setTimeout(resolve, 200))
+      } catch (e) {
+        console.warn('[Pear] Failed to switch back:', e)
+        // Non-fatal - user can switch manually
+      }
+    }
+  }
+
+  // Step 6: Submit signature to Pear API
   const authResponse = await fetch(`${PEAR_API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -220,9 +244,6 @@ export async function authenticatePear(address: string): Promise<PearTokens> {
   return tokens
 }
 
-/**
- * Refresh access token
- */
 async function refreshAccessToken(): Promise<PearTokens> {
   const tokens = getPearTokens()
   if (!tokens?.refreshToken) {
@@ -251,9 +272,6 @@ async function refreshAccessToken(): Promise<PearTokens> {
   return newTokens
 }
 
-/**
- * Get valid access token, refreshing if needed
- */
 async function getAccessToken(): Promise<string> {
   let tokens = getPearTokens()
 
@@ -261,7 +279,6 @@ async function getAccessToken(): Promise<string> {
     throw new Error('Not authenticated with Pear Protocol')
   }
 
-  // Refresh if expired or about to expire (60s buffer)
   if (Date.now() > tokens.expiresAt - 60000) {
     tokens = await refreshAccessToken()
   }
@@ -269,9 +286,6 @@ async function getAccessToken(): Promise<string> {
   return tokens.accessToken
 }
 
-/**
- * Logout from Pear
- */
 export async function logoutPear(): Promise<void> {
   const tokens = getPearTokens()
   if (tokens?.refreshToken) {
@@ -292,13 +306,9 @@ export async function logoutPear(): Promise<void> {
 // Agent Wallet
 // ============================================
 
-/**
- * Get or create agent wallet for trade execution
- */
 export async function getAgentWallet(): Promise<string> {
   const token = await getAccessToken()
 
-  // First try to get existing wallet
   let response = await fetch(`${PEAR_API_BASE}/agentWallet`, {
     method: 'GET',
     headers: {
@@ -314,7 +324,6 @@ export async function getAgentWallet(): Promise<string> {
     }
   }
 
-  // If no wallet exists, create one
   response = await fetch(`${PEAR_API_BASE}/agentWallet`, {
     method: 'POST',
     headers: {
@@ -330,8 +339,6 @@ export async function getAgentWallet(): Promise<string> {
 
   const data = await response.json()
   console.log('[Pear] Agent wallet created:', data.agentWalletAddress)
-  console.log('[Pear] Note:', data.message)
-
   return data.agentWalletAddress
 }
 
@@ -339,14 +346,11 @@ export async function getAgentWallet(): Promise<string> {
 // Position Management
 // ============================================
 
-/**
- * Create a new position (pair/basket trade)
- */
 export async function createPosition(params: CreatePositionParams): Promise<CreatePositionResponse> {
   const token = await getAccessToken()
 
   const body: Record<string, any> = {
-    slippage: params.slippage ?? 0.01, // 1% default
+    slippage: params.slippage ?? 0.01,
     executionType: params.executionType ?? 'MARKET',
     leverage: params.leverage,
     usdValue: params.usdValue,
@@ -354,7 +358,6 @@ export async function createPosition(params: CreatePositionParams): Promise<Crea
     shortAssets: params.shortAssets
   }
 
-  // Add trigger parameters if specified
   if (params.trigger) {
     body['executionType'] = 'TRIGGER'
     body['triggerType'] = params.trigger.type
@@ -365,19 +368,13 @@ export async function createPosition(params: CreatePositionParams): Promise<Crea
     }
   }
 
-  // Add TWAP parameters if specified
   if (params.executionType === 'TWAP' && params.twapDuration) {
     body['twapDuration'] = params.twapDuration
     body['twapIntervalSeconds'] = params.twapIntervalSeconds ?? 30
   }
 
-  // Add risk management if specified
-  if (params.stopLoss) {
-    body['stopLoss'] = params.stopLoss
-  }
-  if (params.takeProfit) {
-    body['takeProfit'] = params.takeProfit
-  }
+  if (params.stopLoss) body['stopLoss'] = params.stopLoss
+  if (params.takeProfit) body['takeProfit'] = params.takeProfit
 
   console.log('[Pear] Creating position:', body)
 
@@ -400,9 +397,6 @@ export async function createPosition(params: CreatePositionParams): Promise<Crea
   return result
 }
 
-/**
- * Get all open positions
- */
 export async function getOpenPositions(): Promise<PearPosition[]> {
   const token = await getAccessToken()
 
@@ -422,9 +416,6 @@ export async function getOpenPositions(): Promise<PearPosition[]> {
   return response.json()
 }
 
-/**
- * Close a position
- */
 export async function closePosition(positionId: string): Promise<void> {
   const token = await getAccessToken()
 
@@ -448,9 +439,6 @@ export async function closePosition(positionId: string): Promise<void> {
 // Orders
 // ============================================
 
-/**
- * Get open orders
- */
 export async function getOpenOrders(): Promise<any[]> {
   const token = await getAccessToken()
 
@@ -462,16 +450,10 @@ export async function getOpenOrders(): Promise<any[]> {
     }
   })
 
-  if (!response.ok) {
-    return []
-  }
-
+  if (!response.ok) return []
   return response.json()
 }
 
-/**
- * Cancel an order
- */
 export async function cancelOrder(orderId: string): Promise<void> {
   const token = await getAccessToken()
 
@@ -493,9 +475,6 @@ export async function cancelOrder(orderId: string): Promise<void> {
 // Battle Helpers
 // ============================================
 
-/**
- * Convert BattleAssets to Pear format
- */
 export function battleAssetsToPear(assets: BattleAsset[]): Array<{ asset: string; weight: number }> {
   return assets.map(a => ({
     asset: a.symbol,
@@ -503,9 +482,6 @@ export function battleAssetsToPear(assets: BattleAsset[]): Array<{ asset: string
   }))
 }
 
-/**
- * Create a battle position (wrapper for createPosition)
- */
 export async function createBattlePosition(
   longAssets: BattleAsset[],
   shortAssets: BattleAsset[],
@@ -525,17 +501,9 @@ export async function createBattlePosition(
     slippage: 0.01
   }
 
-  if (options?.trigger) {
-    params.trigger = options.trigger
-  }
-
-  if (options?.stopLossPercent) {
-    params.stopLoss = { type: 'PERCENTAGE', value: options.stopLossPercent }
-  }
-
-  if (options?.takeProfitPercent) {
-    params.takeProfit = { type: 'PERCENTAGE', value: options.takeProfitPercent }
-  }
+  if (options?.trigger) params.trigger = options.trigger
+  if (options?.stopLossPercent) params.stopLoss = { type: 'PERCENTAGE', value: options.stopLossPercent }
+  if (options?.takeProfitPercent) params.takeProfit = { type: 'PERCENTAGE', value: options.takeProfitPercent }
 
   return createPosition(params)
 }

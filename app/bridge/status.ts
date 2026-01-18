@@ -70,7 +70,6 @@ function mapStatusResponse(response: StatusResponse): BridgeStatusResult {
     bridgeExplorerLink: response.bridgeExplorerLink,
   }
 
-  // Map sending transaction
   if (response.sending) {
     result.sending = {
       txHash: response.sending.txHash || '',
@@ -83,7 +82,6 @@ function mapStatusResponse(response: StatusResponse): BridgeStatusResult {
     result.fromAmount = response.sending.amount
   }
 
-  // Map receiving transaction
   if (response.receiving) {
     result.receiving = {
       txHash: response.receiving.txHash || '',
@@ -114,13 +112,12 @@ function mapLiFiStatus(status: string): BridgeStatusResult['status'] {
   }
 }
 
-// Poll for status updates
 export async function pollBridgeStatus(
   params: BridgeStatusParams,
   onUpdate: (status: BridgeStatusResult) => void,
   options?: {
-    interval?: number      // Polling interval in ms (default 5000)
-    maxAttempts?: number   // Max polling attempts (default 120 = 10 minutes)
+    interval?: number
+    maxAttempts?: number
   }
 ): Promise<BridgeStatusResult> {
   const interval = options?.interval || 5000
@@ -155,8 +152,6 @@ export async function pollBridgeStatus(
           reject(error)
           return
         }
-
-        // Continue polling on transient errors
         setTimeout(poll, interval)
       }
     }
@@ -165,7 +160,6 @@ export async function pollBridgeStatus(
   })
 }
 
-// Get explorer link for a transaction
 export function getExplorerLink(chainId: number, txHash: string): string {
   const explorers: Record<number, string> = {
     1: 'https://etherscan.io/tx/',

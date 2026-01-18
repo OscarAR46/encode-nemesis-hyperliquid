@@ -3,9 +3,9 @@
  * Gets the best route for bridging from source chain to HyperEVM
  */
 
-import { getQuote as lifiGetQuote, getRoutes } from '@lifi/sdk'
-import type { QuoteRequest, Route, RoutesRequest } from '@lifi/sdk'
-import { HYPEREVM_CHAIN_ID, getLiFiConfig } from './index'
+import { getRoutes } from '@lifi/sdk'
+import type { Route, RoutesRequest } from '@lifi/sdk'
+import { getLiFiConfig } from './index'
 import { SOURCE_CHAINS } from '@config/chains'
 
 export interface QuoteParams {
@@ -48,11 +48,21 @@ export interface QuoteError {
 }
 
 function getChainName(chainId: number): string {
-  const chain = SOURCE_CHAINS.find(c => c.id === chainId)
+  const chain = SOURCE_CHAINS?.find(c => c.id === chainId)
   if (chain) return chain.name
-  if (chainId === 999) return 'HyperEVM'
-  if (chainId === 998) return 'HyperEVM Testnet'
-  return `Chain ${chainId}`
+  
+  const names: Record<number, string> = {
+    1: 'Ethereum',
+    42161: 'Arbitrum',
+    8453: 'Base',
+    137: 'Polygon',
+    10: 'Optimism',
+    43114: 'Avalanche',
+    56: 'BNB Chain',
+    999: 'HyperEVM',
+    998: 'HyperEVM Testnet',
+  }
+  return names[chainId] || `Chain ${chainId}`
 }
 
 function parseRouteSteps(route: Route): RouteStep[] {
@@ -93,7 +103,6 @@ export async function getQuote(params: QuoteParams): Promise<QuoteResult> {
   }
 
   try {
-    // Try to get routes first (more flexible)
     const routesRequest: RoutesRequest = {
       fromChainId,
       toChainId,
@@ -152,7 +161,6 @@ export async function getQuote(params: QuoteParams): Promise<QuoteResult> {
       steps: parseRouteSteps(route),
     }
   } catch (error: any) {
-    // Handle LI.FI specific errors
     if (error.code) {
       throw error // Already a QuoteError
     }

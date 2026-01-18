@@ -80,7 +80,7 @@ export const BATTLE_THEMES: BattleTheme[] = [
     id: 'defi-revival',
     name: 'DeFi Revival',
     description: 'DeFi blue chips will lead',
-    icon: '🏦',
+    icon: '🦄',
     assets: [
       { symbol: 'AAVE', weight: 0.30 },
       { symbol: 'UNI', weight: 0.25 },
@@ -147,18 +147,15 @@ export const DEFAULT_SHORT_ASSETS = [
   { symbol: 'ETH', weight: 1.0 }
 ]
 
-// Get theme by ID
 export function getThemeById(id: string): BattleTheme | undefined {
   return BATTLE_THEMES.find(t => t.id === id)
 }
 
-// Get theme display name with icon
 export function getThemeDisplay(id: string): string {
   const theme = getThemeById(id)
   return theme ? `${theme.icon} ${theme.name}` : id
 }
 
-// Get all asset symbols from a theme
 export function getThemeAssetSymbols(id: string): string[] {
   const theme = getThemeById(id)
   return theme ? theme.assets.map(a => a.symbol) : []

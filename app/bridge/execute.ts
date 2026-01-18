@@ -5,7 +5,7 @@
 
 import { executeRoute } from '@lifi/sdk'
 import type { Route, RouteExtended } from '@lifi/sdk'
-import { getLiFiConfig, clearBridgeSessions } from './index'
+import { getLiFiConfig, clearBridgeSessions, prepareBridge, finishBridge } from './index'
 import { getAccount } from '@wagmi/core'
 import { wagmiConfig } from '@config/wagmi'
 import type { BridgeStep } from '@app/types'
@@ -51,10 +51,20 @@ export async function executeBridge(
   const totalSteps = route.steps.length
   let currentStepIndex = 0
 
+  // Get the source chain from the first step
+  const sourceChainId = route.steps[0]?.action?.fromChainId
+  if (!sourceChainId) {
+    throw createExecutionError('INVALID_ROUTE', 'Route has no source chain', undefined, true)
+  }
+
   try {
+    // CRITICAL: Switch to source chain BEFORE executing
+    console.log('[Bridge] Preparing bridge from chain:', sourceChainId)
+    await prepareBridge(sourceChainId)
+    callbacks?.onBridgeStart?.()
+
     // Execute the route with progress updates
-    const executionResult = await executeRoute(route, {
-      // Update hook for progress tracking
+    await executeRoute(route, {
       updateRouteHook: (updatedRoute: RouteExtended) => {
         // Find current executing step
         const executingStep = updatedRoute.steps.find(
@@ -94,31 +104,23 @@ export async function executeBridge(
         }
       },
 
-      // Note: Chain switching is handled by the EVM provider configured in index.ts
-      // The switchChainHook there properly returns the WalletClient after switching
-
-      // Accept exchange rate updates within tolerance
       acceptExchangeRateUpdateHook: async (params) => {
-        // Auto-accept if the new rate is within 5% of original
         const originalRate = parseFloat(params.oldToAmount) / parseFloat(route.fromAmount)
         const newRate = parseFloat(params.newToAmount) / parseFloat(route.fromAmount)
         const rateChange = Math.abs(newRate - originalRate) / originalRate
 
         if (rateChange <= 0.05) {
-          console.log('[Bridge] Accepting rate update:', rateChange * 100, '%')
+          console.log('[Bridge] Accepting rate update:', (rateChange * 100).toFixed(2), '%')
           return true
         }
 
-        console.warn('[Bridge] Rate change too large, rejecting:', rateChange * 100, '%')
+        console.warn('[Bridge] Rate change too large, rejecting:', (rateChange * 100).toFixed(2), '%')
         return false
       },
     })
 
-    // Extract final result
-    const lastStep = route.steps[route.steps.length - 1]
-    const txHash = lastStep.transactionRequest?.data
-      ? undefined // Will be set by execution
-      : undefined
+    // Switch back to HyperEVM after successful bridge
+    await finishBridge()
 
     return {
       success: true,
@@ -130,7 +132,14 @@ export async function executeBridge(
     console.error('[Bridge] Execution failed:', error)
     const errorMessage = error?.message || ''
 
-    // Handle WalletConnect session errors
+    // Try to switch back to HyperEVM even on failure
+    try {
+      await finishBridge()
+    } catch (e) {
+      console.warn('[Bridge] Failed to switch back after error:', e)
+    }
+
+    // Handle specific error types
     if (errorMessage.includes('session topic') ||
         errorMessage.includes('No matching key') ||
         errorMessage.includes('session expired')) {
@@ -144,7 +153,6 @@ export async function executeBridge(
       )
     }
 
-    // Handle user rejection
     if (errorMessage.includes('rejected') || errorMessage.includes('denied')) {
       throw createExecutionError(
         'USER_REJECTED',
@@ -154,7 +162,6 @@ export async function executeBridge(
       )
     }
 
-    // Handle insufficient funds
     if (errorMessage.includes('insufficient') || errorMessage.includes('funds')) {
       throw createExecutionError(
         'INSUFFICIENT_FUNDS',
@@ -164,13 +171,21 @@ export async function executeBridge(
       )
     }
 
-    // Handle timeout
     if (errorMessage.includes('timeout')) {
       throw createExecutionError(
         'TIMEOUT',
         'Transaction timed out. Check your wallet for pending transactions.',
         route.steps[currentStepIndex]?.tool,
         false
+      )
+    }
+
+    if (errorMessage.includes('does not match') || errorMessage.includes('chain')) {
+      throw createExecutionError(
+        'CHAIN_MISMATCH',
+        'Please switch your wallet to the correct network and try again.',
+        route.steps[currentStepIndex]?.tool,
+        true
       )
     }
 
@@ -209,7 +224,11 @@ function getChainName(chainId: number): string {
 }
 
 export async function cancelExecution(): Promise<void> {
-  // LI.FI SDK doesn't have a direct cancel method
-  // The user can reject transactions in their wallet
   console.log('[Bridge] Execution cancellation requested')
+  // Try to return to HyperEVM
+  try {
+    await finishBridge()
+  } catch (e) {
+    console.warn('[Bridge] Failed to switch back after cancel:', e)
+  }
 }

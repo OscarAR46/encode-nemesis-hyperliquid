@@ -43,6 +43,12 @@ const STATIC_ASSETS = [
   '/nemesis-chan/talkative.png',
 ]
 
+// Track connection state for recovery detection
+let lastKnownState = 'healthy'
+
+// ============================================================================
+// Install - Cache all static assets
+// ============================================================================
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -51,6 +57,9 @@ self.addEventListener('install', event => {
   )
 })
 
+// ============================================================================
+// Activate - Clean old caches
+// ============================================================================
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -61,6 +70,9 @@ self.addEventListener('activate', event => {
   )
 })
 
+// ============================================================================
+// Fetch - Enhanced with instant error detection
+// ============================================================================
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
@@ -68,15 +80,19 @@ self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (request.method !== 'GET') return
 
-  // Skip API routes - always hit network for live data
-  if (url.pathname.startsWith('/v1/')) return
-
   // Skip WebSocket upgrades
   if (request.headers.get('Upgrade') === 'websocket') return
 
   // Skip cross-origin requests
   if (url.origin !== location.origin) return
 
+  // API routes (/v1/* and /health) - network only with INSTANT error detection
+  if (url.pathname.startsWith('/v1/') || url.pathname === '/health') {
+    event.respondWith(handleApiRequest(request, url))
+    return
+  }
+
+  // Static assets - cache first with network fallback
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached
@@ -95,3 +111,63 @@ self.addEventListener('fetch', event => {
     })
   )
 })
+
+// ============================================================================
+// API Request Handler - Instant error detection
+// ============================================================================
+async function handleApiRequest(request, url) {
+  try {
+    const response = await fetch(request)
+    
+    // INSTANT detection of 5xx errors
+    if (!response.ok && response.status >= 500) {
+      broadcastToClients({
+        type: 'SERVER_ERROR',
+        path: url.pathname,
+        status: response.status,
+        timestamp: Date.now()
+      })
+      lastKnownState = 'error'
+    } else if (response.ok && lastKnownState !== 'healthy') {
+      // Server recovered - broadcast recovery
+      broadcastToClients({
+        type: 'SERVER_RECOVERED',
+        path: url.pathname,
+        timestamp: Date.now()
+      })
+      lastKnownState = 'healthy'
+    }
+    
+    return response
+  } catch (error) {
+    // INSTANT detection of network failures
+    broadcastToClients({
+      type: 'NETWORK_ERROR',
+      path: url.pathname,
+      message: error.message || 'Network request failed',
+      timestamp: Date.now()
+    })
+    lastKnownState = 'error'
+    
+    // Return error response
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Network error',
+      offline: true,
+      timestamp: Date.now()
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+}
+
+// ============================================================================
+// Broadcast to all clients
+// ============================================================================
+async function broadcastToClients(message) {
+  const clients = await self.clients.matchAll({ type: 'window' })
+  clients.forEach(client => {
+    client.postMessage(message)
+  })
+}
