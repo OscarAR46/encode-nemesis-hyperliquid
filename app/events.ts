@@ -24,32 +24,23 @@ import {
   getErrorMessage,
 } from '@app/wallet'
 import type { NavTab, OrderTab, PosTab, AvatarMode } from '@app/types'
+import { hyperliquidWS } from '@app/websocket'
 
-let swRegistered = false
+function openOrderBook(coin: string) {
+  state.showOrderBook = true
+  hyperliquidWS.subscribeToOrderBook(coin)
+  playSound([500])
+  render()
+}
+
+function closeOrderBook() {
+  state.showOrderBook = false
+  hyperliquidWS.unsubscribeFromOrderBook()
+  render()
+}
 
 function getIntroDialogue() {
   return state.isReturningPlayer ? RETURNING_INTRO_DIALOGUE : INTRO_DIALOGUE
-}
-
-function registerServiceWorker(): void {
-  if (swRegistered || !('serviceWorker' in navigator)) return
-  swRegistered = true
-
-  navigator.serviceWorker.register('/sw.js')
-    .then((registration) => {
-      console.log('[SW] Registered, scope:', registration.scope)
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed') {
-              console.log('[SW] All nemesis-chan images eagerly cached')
-            }
-          })
-        }
-      })
-    })
-    .catch((err) => console.warn('[SW] Registration failed:', err))
 }
 
 function advanceIntro(forceSkip = false) {
@@ -83,7 +74,6 @@ function handleTitleClick() {
   if (!state.introStarted) {
     state.introStarted = true
     playSound([500])
-    registerServiceWorker()
     connectSignal(() => {
       showDialogue(getIntroDialogue()[0])
     })
@@ -273,7 +263,6 @@ export function setupDelegatedEvents() {
       if (target.closest('#btn-continue')) {
         state.scene = 'title'
         playSound([523, 659, 784])
-        registerServiceWorker()
         render()
         // For returning users, automatically start the welcome back dialogue
         setTimeout(() => {
@@ -520,6 +509,35 @@ export function setupDelegatedEvents() {
         setTimeout(() => showRandomDialogue('marketChange'), 200)
       } else {
         state.showMarketModal = false
+        render()
+      }
+      return
+    }
+
+    // Order Book handlers
+    const tickerItem = target.closest('.ticker-item') as HTMLElement | null
+    if (tickerItem || target.closest('#live-ticker')) {
+      const coin = tickerItem?.dataset.coin || 'BTC'
+      openOrderBook(coin)
+      return
+    }
+
+    if (target.id === 'orderbook-modal') {
+      closeOrderBook()
+      return
+    }
+
+    if (target.closest('#orderbook-close')) {
+      closeOrderBook()
+      return
+    }
+
+    const coinTab = target.closest('.ob-coin-tab') as HTMLElement | null
+    if (coinTab) {
+      const coin = coinTab.dataset.coin
+      if (coin && coin !== state.orderBookCoin) {
+        hyperliquidWS.subscribeToOrderBook(coin)
+        playSound([500])
         render()
       }
       return

@@ -23,6 +23,7 @@ import cssAvatar from "./css/avatar.css" with { type: "file" }
 import cssPanels from "./css/panels.css" with { type: "file" }
 import cssPages from "./css/pages.css" with { type: "file" }
 import cssConnection from "./css/connection.css" with { type: "file" }
+import cssWallet from "./css/wallet.css" with { type: "file" }
 import cssUtils from "./css/utils.css" with { type: "file" }
 import cssResponsive from "./css/responsive.css" with { type: "file" }
 
@@ -107,6 +108,7 @@ export const staticAssets = new Map<string, { filePath: string; contentType: str
   ["/css/panels.css", { filePath: cssPanels, contentType: "text/css" }],
   ["/css/pages.css", { filePath: cssPages, contentType: "text/css" }],
   ["/css/connection.css", { filePath: cssConnection, contentType: "text/css" }],
+  ["/css/wallet.css", { filePath: cssWallet, contentType: "text/css" }],
   ["/css/utils.css", { filePath: cssUtils, contentType: "text/css" }],
   ["/css/responsive.css", { filePath: cssResponsive, contentType: "text/css" }],
 ])

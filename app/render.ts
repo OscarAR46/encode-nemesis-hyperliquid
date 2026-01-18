@@ -138,6 +138,7 @@ function renderMainInterface(): string {
             </nav>
           </div>
           <div class="header-right">
+            ${renderLivePricesTicker()}
             <div class="header-stats">
               <div class="stat"><div class="stat-label">24h Volume</div><div class="stat-value">$2.84M</div></div>
               <div class="stat"><div class="stat-label">Your P&L</div><div class="stat-value ${pnl >= 0 ? 'up' : 'down'}">${pnl >= 0 ? '+' : ''}${formatUSD(pnl)}</div></div>
@@ -198,6 +199,22 @@ function renderMainInterface(): string {
         </div>
       </div>
       ${state.showMarketModal ? renderMarketModal() : ''}
+      ${state.showOrderBook ? renderOrderBookModal() : ''}
+    </div>
+  `
+}
+
+function renderLivePricesTicker(): string {
+  const coins = ['BTC', 'ETH', 'SOL', 'HYPE']
+  const items = coins.map(c => {
+    const price = state.prices[c]
+    return `<span class="ticker-item" data-coin="${c}">${c} <span class="ticker-price">${price ? `$${price.toFixed(0)}` : '...'}</span></span>`
+  }).join('')
+
+  return `
+    <div class="live-ticker" id="live-ticker" title="Click to open Order Book">
+      ${items}
+      <span class="ticker-expand">${ICONS.expand || '↗'}</span>
     </div>
   `
 }
@@ -337,6 +354,69 @@ function renderMarketModal(): string {
   return `<div class="modal" id="market-modal"><div class="modal-box"><div class="modal-head"><span class="modal-title">:: Select Market ::</span><button class="modal-close" id="modal-close">×</button></div><div class="modal-filters">${filters.map(f => `<button class="modal-filter ${state.marketFilter === f ? 'active' : ''}" data-filter="${f}">${f.charAt(0).toUpperCase() + f.slice(1)}</button>`).join('')}</div><div class="modal-list">${filtered.map(m => `<div class="modal-option ${m.id === state.selectedMarket ? 'selected' : ''}" data-id="${m.id}"><div class="modal-option-info"><span class="modal-option-asset">${m.asset}</span><span class="modal-option-q">${m.question}</span></div><div class="modal-option-prices"><span class="price-yes">${(m.yesPrice * 100).toFixed(0)}¢</span><span class="price-no">${(m.noPrice * 100).toFixed(0)}¢</span></div></div>`).join('')}</div></div></div>`
 }
 
+function renderOrderBookModal(): string {
+  const ob = state.orderBook
+  const coin = state.orderBookCoin
+  const price = state.prices[coin]
+
+  // Popular coins for quick switching
+  const popularCoins = ['BTC', 'ETH', 'SOL', 'HYPE', 'ARB', 'DOGE']
+
+  let bookContent = ''
+  if (!ob) {
+    bookContent = '<div class="orderbook-loading">Loading order book...</div>'
+  } else {
+    const maxBidSize = Math.max(...ob.bids.map(b => b.size), 0.01)
+    const maxAskSize = Math.max(...ob.asks.map(a => a.size), 0.01)
+
+    const askRows = [...ob.asks].reverse().map(a => {
+      const pct = (a.size / maxAskSize) * 100
+      return `<div class="ob-row ob-ask"><div class="ob-bar" style="width:${pct}%"></div><span class="ob-price">${a.price.toFixed(2)}</span><span class="ob-size">${a.size.toFixed(4)}</span></div>`
+    }).join('')
+
+    const bidRows = ob.bids.map(b => {
+      const pct = (b.size / maxBidSize) * 100
+      return `<div class="ob-row ob-bid"><div class="ob-bar" style="width:${pct}%"></div><span class="ob-price">${b.price.toFixed(2)}</span><span class="ob-size">${b.size.toFixed(4)}</span></div>`
+    }).join('')
+
+    const spread = ob.asks.length > 0 && ob.bids.length > 0
+      ? (ob.asks[0].price - ob.bids[0].price).toFixed(2)
+      : '-'
+
+    bookContent = `
+      <div class="ob-asks">${askRows}</div>
+      <div class="ob-spread">
+        <span class="ob-spread-label">Spread</span>
+        <span class="ob-spread-value">$${spread}</span>
+      </div>
+      <div class="ob-bids">${bidRows}</div>
+    `
+  }
+
+  return `
+    <div class="modal" id="orderbook-modal">
+      <div class="modal-box orderbook-box">
+        <div class="modal-head">
+          <span class="modal-title">:: ${coin} Order Book ::</span>
+          <button class="modal-close" id="orderbook-close">×</button>
+        </div>
+        <div class="ob-coin-tabs">
+          ${popularCoins.map(c => `<button class="ob-coin-tab ${c === coin ? 'active' : ''}" data-coin="${c}">${c}</button>`).join('')}
+        </div>
+        <div class="ob-header">
+          <span class="ob-mid-price">${price ? `$${price.toFixed(2)}` : 'Loading...'}</span>
+          <span class="ob-timestamp">${ob ? `Updated ${Math.floor((Date.now() - ob.lastUpdate) / 1000)}s ago` : ''}</span>
+        </div>
+        <div class="ob-labels">
+          <span>Price (USD)</span>
+          <span>Size</span>
+        </div>
+        <div class="ob-book">${bookContent}</div>
+      </div>
+    </div>
+  `
+}
+
 function getConnectionIndicatorClass(): string {
   switch (state.connectionState) {
     case 'CONNECTED': return 'state-connected'
@@ -401,13 +481,17 @@ function renderDiagnosticPanel(): string {
   const history = connectionMonitor.getHistory(10)
   const serverStats = connectionMonitor.getLatencyStats('serverHealth')
   const exchangeStats = connectionMonitor.getLatencyStats('exchangeHealth')
+  const isInitializing = connectionMonitor.isInitializing()
+  const initProgress = connectionMonitor.getInitializationProgress()
 
   const probeRows = reports.map(r => {
+    const isReady = initProgress.ready.includes(r.name)
     const statusClass = `probe-${r.status}`
+    const readyIndicator = isInitializing ? (isReady ? '✓' : '⏳') : ''
     const latencyStr = r.latency ? `${r.latency}ms` : ''
     return `
       <div class="probe-row">
-        <span class="probe-name">${formatProbeName(r.name)}</span>
+        <span class="probe-name">${readyIndicator} ${formatProbeName(r.name)}</span>
         <span class="probe-status ${statusClass}">${r.status}</span>
         <span class="probe-latency">${latencyStr}</span>
         <span class="probe-message">${r.message || ''}</span>
@@ -421,6 +505,12 @@ function renderDiagnosticPanel(): string {
     return `<div class="history-item"><span class="history-time">${time}</span><span class="history-event">${desc}</span></div>`
   }).join('')
 
+  const overallStateDisplay = isInitializing
+    ? `INITIALIZING (${initProgress.ready.length}/5)`
+    : state.connectionState
+
+  const stateClass = isInitializing ? 'initializing' : state.connectionState.toLowerCase()
+
   return `
     <div class="diagnostic-panel" id="diagnostic-panel">
       <div class="diagnostic-header">
@@ -428,12 +518,12 @@ function renderDiagnosticPanel(): string {
         <button class="diagnostic-close" id="diagnostic-close">×</button>
       </div>
       <div class="diagnostic-overview">
-        <div class="overall-state state-${state.connectionState.toLowerCase()}">${state.connectionState}</div>
-        <div class="confidence-label">Confidence: ${confidence}</div>
+        <div class="overall-state state-${stateClass}">${overallStateDisplay}</div>
+        <div class="confidence-label">${isInitializing ? 'Waiting for all probes...' : `Confidence: ${confidence}`}</div>
         <div class="last-update">Last update: ${connectionMonitor.getFormattedLastUpdate()}</div>
       </div>
       <div class="diagnostic-section">
-        <div class="diagnostic-section-title">Probes</div>
+        <div class="diagnostic-section-title">Probes ${isInitializing ? `(${initProgress.ready.length}/${initProgress.ready.length + initProgress.pending.length} ready)` : ''}</div>
         <div class="probe-list">${probeRows}</div>
       </div>
       ${serverStats || exchangeStats ? `

@@ -72,6 +72,18 @@ export interface PanelStates {
   positions: boolean
 }
 
+export interface OrderBookLevel {
+  price: number
+  size: number
+}
+
+export interface OrderBookData {
+  coin: string
+  bids: OrderBookLevel[]
+  asks: OrderBookLevel[]
+  lastUpdate: number
+}
+
 export interface TabTutorialState {
   trade: boolean
   feed: boolean
@@ -134,4 +146,9 @@ export interface AppState {
   tabTutorialShown: TabTutorialState
   prices: Record<string, number>
   lastPriceUpdate: number
+
+  // Order book
+  orderBook: OrderBookData | null
+  showOrderBook: boolean
+  orderBookCoin: string
 }

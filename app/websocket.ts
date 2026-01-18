@@ -7,7 +7,11 @@ type WebSocketState = 'disconnected' | 'connecting' | 'connected' | 'reconnectin
 
 interface HyperliquidMessage {
   channel: string
-  data: { mids?: Record<string, string> }
+  data: {
+    mids?: Record<string, string>
+    coin?: string
+    levels?: [Array<{ px: string; sz: string; n: number }>, Array<{ px: string; sz: string; n: number }>]
+  }
 }
 
 interface PriceSnapshot { price: number; timestamp: number }
@@ -88,6 +92,39 @@ class HyperliquidWebSocket {
 
   private handleMessage(msg: HyperliquidMessage) {
     if (msg.channel === 'allMids' && msg.data.mids) this.handlePrices(msg.data.mids)
+    if (msg.channel === 'l2Book' && msg.data.levels && msg.data.coin) this.handleOrderBook(msg.data.coin, msg.data.levels)
+  }
+
+  private handleOrderBook(coin: string, levels: [Array<{ px: string; sz: string; n: number }>, Array<{ px: string; sz: string; n: number }>]) {
+    const [bids, asks] = levels
+
+    state.orderBook = {
+      coin,
+      bids: bids.slice(0, 15).map(l => ({ price: parseFloat(l.px), size: parseFloat(l.sz) })),
+      asks: asks.slice(0, 15).map(l => ({ price: parseFloat(l.px), size: parseFloat(l.sz) })),
+      lastUpdate: Date.now(),
+    }
+
+    if (state.showOrderBook) render()
+  }
+
+  subscribeToOrderBook(coin: string) {
+    // Unsubscribe from previous if any
+    if (state.orderBookCoin && state.orderBookCoin !== coin) {
+      this.send({ method: 'unsubscribe', subscription: { type: 'l2Book', coin: state.orderBookCoin } })
+    }
+    state.orderBookCoin = coin
+    state.orderBook = null
+    this.send({ method: 'subscribe', subscription: { type: 'l2Book', coin } })
+    console.log(`[WebSocket] Subscribed to L2 book: ${coin}`)
+  }
+
+  unsubscribeFromOrderBook() {
+    if (state.orderBookCoin) {
+      this.send({ method: 'unsubscribe', subscription: { type: 'l2Book', coin: state.orderBookCoin } })
+      state.orderBook = null
+      console.log(`[WebSocket] Unsubscribed from L2 book: ${state.orderBookCoin}`)
+    }
   }
 
   private handlePrices(mids: Record<string, string>) {

@@ -126,6 +126,12 @@
 .overall-state.state-degraded { background: rgba(212, 168, 85, 0.2); color: var(--gold); border: 1px solid var(--gold); }
 .overall-state.state-unstable { background: rgba(224, 128, 64, 0.2); color: #e08040; border: 1px solid #e08040; }
 .overall-state.state-disconnected { background: rgba(192, 96, 112, 0.2); color: var(--no-color); border: 1px solid var(--no-color); }
+.overall-state.state-initializing { background: rgba(100, 180, 255, 0.2); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); animation: pulse-init 1.5s ease-in-out infinite; }
+
+@keyframes pulse-init {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
 
 .confidence-label, .last-update { font-size: 11px; color: var(--text-dim); }
 
