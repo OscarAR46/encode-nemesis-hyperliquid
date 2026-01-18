@@ -8,8 +8,10 @@
  * 3. HyperEVM support was added to LI.FI in June 2025
  */
 
-import { createConfig, ChainId, getChains } from '@lifi/sdk'
+import { createConfig, ChainId, getChains, EVM } from '@lifi/sdk'
 import type { ExtendedChain } from '@lifi/sdk'
+import { getWalletClient, switchChain } from '@wagmi/core'
+import { wagmiConfig } from '@config/wagmi'
 
 // LI.FI SDK Configuration
 const LIFI_INTEGRATOR = 'nemesis-hyperliquid'
@@ -35,14 +37,107 @@ let supportedChains: ExtendedChain[] = []
 // Initialize LI.FI SDK configuration
 let lifiConfig: ReturnType<typeof createConfig> | null = null
 
+/**
+ * Clear stale WalletConnect sessions that may cause "session topic doesn't exist" errors
+ */
+function clearStaleWalletConnectSessions(): void {
+  if (typeof window === 'undefined') return
+
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key && (
+      key.startsWith('wc@') ||
+      key.startsWith('wagmi') ||
+      key.includes('walletconnect')
+    )) {
+      keysToRemove.push(key)
+    }
+  }
+
+  if (keysToRemove.length > 0) {
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key)
+      console.debug('[LI.FI] Cleared stale session:', key)
+    })
+  }
+}
+
+/**
+ * Check if there's a valid WalletConnect session
+ */
+function hasValidWalletConnectSession(): boolean {
+  if (typeof window === 'undefined') return false
+
+  try {
+    const sessionKey = Object.keys(localStorage).find(key =>
+      key.startsWith('wc@2:client:0.3') && key.includes('session')
+    )
+    if (!sessionKey) return true // No WalletConnect session, that's fine
+
+    const sessionData = localStorage.getItem(sessionKey)
+    if (!sessionData) return true
+
+    const sessions = JSON.parse(sessionData)
+    // Check if sessions array is valid and not empty
+    return Array.isArray(sessions) && sessions.length > 0
+  } catch {
+    return false
+  }
+}
+
 export function initLiFi() {
   if (lifiConfig) return lifiConfig
 
+  // Clear stale sessions before initializing if needed
+  if (!hasValidWalletConnectSession()) {
+    console.warn('[LI.FI] Detected potentially stale WalletConnect session, clearing...')
+    clearStaleWalletConnectSessions()
+  }
+
   lifiConfig = createConfig({
     integrator: LIFI_INTEGRATOR,
+    providers: [
+      EVM({
+        // Provide wallet client for transaction signing
+        getWalletClient: async () => {
+          try {
+            return await getWalletClient(wagmiConfig)
+          } catch (error: any) {
+            // Handle stale WalletConnect session errors
+            if (error?.message?.includes('session topic') ||
+                error?.message?.includes('No matching key')) {
+              console.warn('[LI.FI] Stale WalletConnect session, clearing and retrying...')
+              clearStaleWalletConnectSessions()
+              // Return undefined to signal SDK to handle reconnection
+              throw new Error('WalletConnect session expired. Please reconnect your wallet.')
+            }
+            throw error
+          }
+        },
+        // Handle chain switching during bridge execution
+        switchChain: async (chainId: number) => {
+          console.log('[LI.FI] Switching to chain:', chainId)
+          try {
+            // Cast to any for wagmi compatibility - wagmi config includes all these chains
+            const chain = await switchChain(wagmiConfig, { chainId: chainId as any })
+            return await getWalletClient(wagmiConfig, { chainId: chain.id })
+          } catch (error: any) {
+            // Handle stale WalletConnect session errors during chain switch
+            if (error?.message?.includes('session topic') ||
+                error?.message?.includes('No matching key')) {
+              console.warn('[LI.FI] Stale WalletConnect session during chain switch, clearing...')
+              clearStaleWalletConnectSessions()
+              throw new Error('WalletConnect session expired. Please reconnect your wallet.')
+            }
+            throw error
+          }
+        },
+      }),
+    ],
   })
 
-  console.log('[LI.FI] SDK initialized for', LIFI_INTEGRATOR)
+  console.log('[LI.FI] SDK initialized with EVM provider for', LIFI_INTEGRATOR)
   return lifiConfig
 }
 
@@ -51,6 +146,25 @@ export function getLiFiConfig() {
     return initLiFi()
   }
   return lifiConfig
+}
+
+/**
+ * Reset LI.FI configuration - call this after wallet reconnection
+ * to ensure fresh session state
+ */
+export function resetLiFiConfig(): void {
+  lifiConfig = null
+  hyperEvmSupported = null
+  supportedChains = []
+  console.log('[LI.FI] Configuration reset, will reinitialize on next use')
+}
+
+/**
+ * Clear all WalletConnect/Wagmi sessions - export for external use
+ */
+export function clearBridgeSessions(): void {
+  clearStaleWalletConnectSessions()
+  resetLiFiConfig()
 }
 
 /**

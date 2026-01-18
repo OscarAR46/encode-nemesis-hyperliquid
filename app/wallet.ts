@@ -15,6 +15,7 @@ import {
 } from '@wagmi/core'
 import type { Connector } from '@wagmi/core'
 import { wagmiConfig, isChainSupported, getDefaultChain, type SupportedChainId } from '@config/index'
+import { resetLiFiConfig } from './bridge/index'
 
 /**
  * Wallet error types for typed error handling
@@ -188,6 +189,8 @@ export async function initWallet(): Promise<WalletState> {
     if (errorMessage.includes('session topic') || errorMessage.includes('No matching key')) {
       console.warn('[Wallet] Stale WalletConnect session detected, clearing...')
       clearStaleWalletConnectSessions()
+      // Also reset LI.FI config to ensure clean state
+      resetLiFiConfig()
     } else {
       console.debug('[Wallet] No persisted session to reconnect:', errorMessage)
     }
@@ -355,13 +358,15 @@ export async function connectWallet(): Promise<ConnectResult> {
  */
 export async function disconnectWallet(): Promise<void> {
   const account = getAccount(wagmiConfig)
-  
+
   if (!account.isConnected) {
     return
   }
-  
+
   try {
     await disconnect(wagmiConfig)
+    // Reset LI.FI config to ensure clean state on next connection
+    resetLiFiConfig()
   } catch (error) {
     throw mapError(error)
   }
