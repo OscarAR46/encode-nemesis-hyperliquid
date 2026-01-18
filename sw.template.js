@@ -15,7 +15,6 @@ const STATIC_ASSETS = [
   '/css/panels.css',
   '/css/pages.css',
   '/css/connection.css',
-  '/css/wallet.css',
   '/css/utils.css',
   '/css/responsive.css',
   '/icon.png',
@@ -53,21 +52,31 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event
   const url = new URL(request.url)
-  
+
+  // Skip non-GET requests
   if (request.method !== 'GET') return
+
+  // Skip API routes - let them go to network
   if (url.pathname.startsWith('/v1/')) return
-  if (url.hostname !== location.hostname) return
-  
+
+  // Skip cross-origin requests
+  if (url.origin !== location.origin) return
+
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached
+
       return fetch(request).then(response => {
+        // Only cache successful same-origin responses
         if (response.ok && response.type === 'basic') {
           const clone = response.clone()
           caches.open(CACHE_NAME).then(cache => cache.put(request, clone))
         }
         return response
-      }).catch(() => new Response('Offline', { status: 503 }))
+      }).catch(() => {
+        // Offline fallback
+        return new Response('Offline', { status: 503 })
+      })
     })
   )
 })
